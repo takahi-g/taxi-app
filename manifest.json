@@ -1,0 +1,9 @@
+{
+  "name": "たかちゃんタクシー",
+  "short_name": "タク計算",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#0054a6",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+}
