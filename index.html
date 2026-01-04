@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>タク計</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #333; }
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { font-size: 1.1rem; color: #0054a6; margin: 0 0 15px 0; display: flex; align-items: center; }
+        input { width: 100%; padding: 15px; font-size: 1.5rem; border: 2px solid #e0e0e0; border-radius: 12px; box-sizing: border-box; text-align: right; margin-bottom: 10px; }
+        .result { background: #e7f3ff; padding: 15px; border-radius: 12px; text-align: center; }
+        .label { font-size: 0.9rem; color: #666; }
+        .income { font-size: 2.2rem; font-weight: bold; color: #d32f2f; margin: 5px 0; }
+        .btn-map { display: block; width: 100%; padding: 15px; background: #28a745; color: white; text-align: center; text-decoration: none; border-radius: 12px; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💰 税抜売上を入力</h1>
+        <input type="number" id="sales" placeholder="0" oninput="calc()">
+        <div id="resArea" class="result" style="display:none;">
+            <div class="label">歩合率: <span id="rate">--</span>%</div>
+            <div class="income"><span id="income">0</span><small>円</small></div>
+            <div class="label">（推定手取り）</div>
+        </div>
+    </div>
+    <div class="card">
+        <h1>🗺️ クイック・ナビ</h1>
+        <a href="http://maps.apple.com/?daddr=福岡県筑紫野市上古賀" class="btn-map">🚗 車庫へ戻る</a>
+        <a href="http://maps.apple.com/?daddr=太宰府天満宮" class="btn-map">⛩️ 太宰府天満宮</a>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+        function calc() {
+            const s = parseFloat(document.getElementById('sales').value);
+            const res = document.getElementById('resArea');
+            if (!s) { res.style.display = 'none'; return; }
+            res.style.display = 'block';
+            let r = s >= 550000 ? 60.8 : s >= 470001 ? 57.9 : s >= 420000 ? 55 : 0;
+            document.getElementById('rate').innerText = r;
+            document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
+        }
+    </script>
+</body>
+</html>
