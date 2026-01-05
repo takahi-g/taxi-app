@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.7</title>
+    <title>タク計 マスター Ver1.8</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -16,6 +16,7 @@
         .result { background: #eef6ff; padding: 12px; border-radius: 10px; text-align: center; margin-top: 10px; }
         .income { font-size: 2rem; font-weight: bold; color: var(--accent-red); margin: 2px 0; }
         .btn-save { width: 100%; padding: 15px; background: var(--main-blue); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; }
+        .total-badge { font-size: 0.75rem; background: #eee; padding: 4px 8px; border-radius: 5px; margin-bottom: 8px; display: inline-block; color: #666; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: right; }
         .total-box { background: #333; color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
@@ -39,7 +40,8 @@
     <div id="input-page" class="tab-content active">
         <div class="card">
             <h1>💰 売上入力</h1>
-            <input type="date" id="work-date">
+            <div id="monthly-sum-info" class="total-badge">今月の累計売上: --円</div>
+            <input type="date" id="work-date" onchange="updateMonthlySum()">
             <input type="number" id="sales" placeholder="税抜売上" oninput="calc()">
             <div id="resArea" class="result" style="display:none;">
                 <div style="font-size:0.8rem;"><span id="rate-label">歩合</span>: <span id="rate">--</span>%</div>
@@ -91,7 +93,6 @@
         document.getElementById('work-date').valueAsDate = new Date();
         document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
-        // 年の選択肢を自動生成 (2024年から来年まで)
         const yearSelect = document.getElementById('view-year');
         const thisYear = new Date().getFullYear();
         for (let y = thisYear + 1; y >= 2024; y--) {
@@ -101,11 +102,29 @@
             yearSelect.appendChild(opt);
         }
 
+        // 歩合計算のルール
         function getRate(sales, isTemp = false) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
             if (sales >= 420000) return 55.0;
             return isTemp ? 55.0 : 0;
+        }
+
+        let monthlyTotalSales = 0;
+
+        // ★選択されている「月」の累計売上を計算する
+        function updateMonthlySum() {
+            const history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
+            const dInput = document.getElementById('work-date').value;
+            if (!dInput) return;
+            const targetMonth = dInput.substring(0, 7); // "YYYY-MM"
+            
+            monthlyTotalSales = history
+                .filter(d => d.date.startsWith(targetMonth))
+                .reduce((sum, item) => sum + item.sales, 0);
+            
+            document.getElementById('monthly-sum-info').innerText = `${targetMonth.replace('-','年')}月の累計売上: ${monthlyTotalSales.toLocaleString()}円`;
+            calc(); // 累計が変わったので再計算
         }
 
         function showToast() {
@@ -119,8 +138,12 @@
             const res = document.getElementById('resArea');
             if (!s) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            let r = getRate(s, true);
-            document.getElementById('rate-label').innerText = s < 420000 ? "暫定歩合" : "確定歩合";
+
+            // ★「今の入力額」＋「今月の累計」で歩合を判定する
+            const totalWithCurrent = monthlyTotalSales + s;
+            let r = getRate(totalWithCurrent, true);
+            
+            document.getElementById('rate-label').innerText = totalWithCurrent < 420000 ? "暫定歩合" : "確定歩合";
             document.getElementById('rate').innerText = r;
             document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
         }
@@ -136,6 +159,7 @@
             showToast();
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
+            updateMonthlySum(); // 保存後に累計を更新
         }
 
         function updateHistory() {
@@ -148,18 +172,15 @@
             let totalS = 0, totalI = 0;
 
             if (mode === 'month') {
-                const selMonth = (parseInt(selYear) === now.getFullYear()) ? (now.getMonth() + 1) : 12; // 過去年なら12月を表示
+                const selMonth = (parseInt(selYear) === now.getFullYear()) ? (now.getMonth() + 1) : 12;
                 const targetMonthStr = selYear + '-' + String(selMonth).padStart(2, '0');
-                
                 document.getElementById('total-label').innerText = selYear + '年' + selMonth + '月の推定手取り';
                 head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th>操作</th></tr>';
-                
                 const filtered = history.filter(d => d.date.startsWith(targetMonthStr));
                 filtered.forEach(d => totalS += d.sales);
                 let r = getRate(totalS, true);
                 totalI = Math.floor(totalS * (r / 100));
                 document.getElementById('total-rate-badge').innerText = totalS < 420000 ? `暫定歩合: ${r}%` : `確定歩合: ${r}%`;
-                
                 filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
                 list.innerHTML = filtered.map(d => {
                     const shortD = d.date.substring(5).replace('-', '/');
@@ -187,7 +208,6 @@
             document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
         }
 
-        // ★売上を直接編集する機能
         function editItem(id) {
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             const item = history.find(d => d.id === id);
@@ -197,6 +217,7 @@
                 item.sales = parseFloat(newSales);
                 localStorage.setItem('taxi_history', JSON.stringify(history));
                 updateHistory();
+                updateMonthlySum();
                 showToast();
             }
         }
@@ -206,6 +227,7 @@
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             localStorage.setItem('taxi_history', JSON.stringify(history.filter(item => item.id !== id)));
             updateHistory();
+            updateMonthlySum();
         }
 
         function showPage(page) {
@@ -214,12 +236,14 @@
             if(page === 'input') {
                 document.getElementById('input-page').classList.add('active');
                 document.getElementById('tab1').classList.add('active-tab');
+                updateMonthlySum();
             } else {
                 document.getElementById('history-page').classList.add('active');
                 document.getElementById('tab2').classList.add('active-tab');
                 updateHistory();
             }
         }
+        updateMonthlySum();
         updateHistory();
     </script>
 </body>
