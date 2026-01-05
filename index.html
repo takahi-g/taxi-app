@@ -1,138 +1,16 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="タク計">
-    <title>タク計 マスター Ver2.6</title>
-
-    <link rel="apple-touch-icon" href="https://r2.community.sre.google/files/f-f32f877d-771c-4389-9943-26279f888888">
-
-    <style>
-        :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #333333; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; }
-        
-        /* 集計カード（黒色） */
-        .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .badge { background: var(--ios-green); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 8px; }
-        .total-val { font-size: 2.8rem; font-weight: 800; margin: 5px 0; }
-        .sub-text { font-size: 0.9rem; opacity: 0.7; }
-
-        /* 一般カード */
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .card-title { font-weight: bold; color: var(--ios-blue); display: flex; align-items: center; gap: 8px; margin-bottom: 15px; font-size: 1rem; }
-
-        /* 履歴テーブル */
-        .hist-table { width: 100%; border-collapse: collapse; }
-        .hist-table th { text-align: left; color: #8e8e93; font-size: 0.85rem; padding-bottom: 10px; border-bottom: 1px solid #f2f2f7; }
-        .hist-table td { padding: 15px 0; border-bottom: 1px solid #f2f2f7; vertical-align: middle; }
-        .hist-btns { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-icon { width: 44px; height: 44px; border-radius: 12px; border: none; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .btn-pencil { background: #eef6ff; }
-        .btn-trash { background: #fff1f0; }
-
-        /* 入力エリア */
-        .input-group { text-align: center; }
-        .gross-input { width: 90%; border: none; border-bottom: 3px solid var(--ios-blue); font-size: 3rem; text-align: center; font-weight: 800; outline: none; margin: 15px 0; background: transparent; }
-        .save-btn { width: 100%; background: var(--ios-blue); color: white; border: none; border-radius: 16px; padding: 20px; font-size: 1.4rem; font-weight: bold; margin-top: 15px; }
-
-        /* 自動計算ステータス */
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #eee; }
-        .stat-val { font-weight: bold; font-size: 1.1rem; }
-        .blue-val { color: var(--ios-blue); }
-        .red-val { color: var(--ios-red); }
-
-        /* ナビゲーション */
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 1000; }
-        nav button { flex: 1; border: none; background: none; color: #8e8e93; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: bold; }
-        nav button.active { color: var(--ios-blue); }
-        nav button span { font-size: 1.4rem; }
-
-        .tab-content { display: none; }
-        .active-tab { display: block; }
-        input[type="date"], select { border: 1px solid #ddd; border-radius: 10px; padding: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; }
-    </style>
-</head>
-<body>
-
-<div id="page-input" class="tab-content active-tab">
-    <div class="card">
-        <div class="card-title">💰 売上入力</div>
-        <div class="input-group">
-            <input type="date" id="work-date" onchange="refresh()">
-            <input type="number" id="input-gross" pattern="\d*" placeholder="0" class="gross-input" oninput="updatePreview()">
-            <div id="preview-area" style="font-weight:bold; color:var(--ios-red);">手取り予測: 0円</div>
-            <button onclick="saveData()" class="save-btn">売上を追加</button>
-        </div>
-    </div>
-</div>
-
-<div id="page-history" class="tab-content">
-    <div class="card" style="background:transparent; box-shadow:none; padding:0;">
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <select id="hist-year" onchange="refresh()"></select>
-            <select id="hist-month" onchange="refresh()"></select>
-        </div>
-    </div>
-
-    <div class="black-card">
-        <div id="hist-label" class="sub-text" style="margin-bottom:5px;">2026年1月の合計</div>
-        <div class="badge" id="hist-rate">暫定歩合: --%</div>
-        <div class="total-val" id="hist-total-income">0円</div>
-        <div class="sub-text">期間総売上: <span id="hist-total-sales">0</span>円</div>
-    </div>
-
-    <div class="card">
-        <div class="card-title">履歴</div>
-        <table class="hist-table">
-            <thead><tr><th>日付</th><th>売上</th><th style="text-align:right;">操作</th></tr></thead>
-            <tbody id="history-list"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="page-settings" class="tab-content">
-    <div class="card">
-        <div class="card-title">⚙️ 目標設定</div>
-        <div class="stat-row">
-            <span>目標売上 (税抜)</span>
-            <input type="number" id="set-goal" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-weight:bold; color:var(--ios-blue);">
-        </div>
-        <div class="stat-row">
-            <span>月間出勤日数</span>
-            <input type="number" id="set-days" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-weight:bold; color:var(--ios-blue);">
-        </div>
-    </div>
-
-    <div class="card" style="background:#eef6ff;">
-        <div class="card-title">📊 自動計算ステータス</div>
-        <div class="stat-row">
-            <span>今月の既出勤数</span>
-            <span id="stat-worked" class="stat-val">0 日</span>
-        </div>
-        <div class="stat-row">
-            <span>残り出勤数</span>
-            <span id="stat-remain" class="stat-val">0 日</span>
-        </div>
-        <div class="stat-row" style="border:none;">
-            <span style="font-weight:bold;">1日平均ノルマ</span>
-            <span id="stat-daily-norm" class="stat-val blue-val">0円</span>
-        </div>
-    </div>
-</div>
-
-<nav>
-    <button onclick="showPage('input')" id="nav-input" class="active"><span>💰</span>入力</button>
-    <button onclick="showPage('history')" id="nav-history"><span>📅</span>履歴・集計</button>
-    <button onclick="showPage('settings')" id="nav-settings"><span>⚙️</span>設定</button>
-</nav>
-
 <script>
-    const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
+    /* ====== 設定 ====== */
+    const STORAGE = {
+        HIST: 'taxi_v11_hist',
+        SETS: 'taxi_v11_sets'
+    };
+
+    const DB = {
+        save: (k, d) => localStorage.setItem(k, JSON.stringify(d)),
+        load: (k, def) => JSON.parse(localStorage.getItem(k)) || def
+    };
     
-    // 西鉄タクシー歩合率
+    // 西鉄タクシー歩合率（税抜売上 net 基準）
     function getRate(net) { 
         if (net >= 550000) return 60.8; 
         if (net >= 470000) return 57.9; 
@@ -140,86 +18,162 @@
         return 50.0;
     }
 
+    function getCurrentMonth() {
+        const d = document.getElementById('work-date').value;
+        return d ? d.substring(0, 7) : null;
+    }
+
     function refresh() {
-        const history = DB.load('taxi_v11_hist', []);
-        const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
-        
-        const selectedDate = document.getElementById('work-date').value;
-        const curMonth = selectedDate.substring(0, 7);
-        
-        // 当月のデータ抽出
-        const monthlyData = history.filter(h => h.date.startsWith(curMonth));
+        const history = DB.load(STORAGE.HIST, []);
+        const sets = DB.load(STORAGE.SETS, { goal: 550000, days: 12 });
+        const curMonth = getCurrentMonth();
+
+        /* ====== ステータス計算 ====== */
+        const monthlyData = curMonth
+            ? history.filter(h => h.date && h.date.startsWith(curMonth))
+            : [];
+
         const workedCount = [...new Set(monthlyData.map(h => h.date))].length;
         const totalNet = monthlyData.reduce((sum, h) => sum + h.net, 0);
-        
-        // ステータス更新（設定画面）
+
         document.getElementById('stat-worked').innerText = workedCount + " 日";
         const remain = Math.max(0, sets.days - workedCount);
         document.getElementById('stat-remain').innerText = remain + " 日";
-        const norm = remain > 0 ? Math.ceil(Math.max(0, sets.goal - totalNet) / remain) : 0;
+        const norm = remain > 0
+            ? Math.ceil(Math.max(0, sets.goal - totalNet) / remain)
+            : 0;
         document.getElementById('stat-daily-norm').innerText = norm.toLocaleString() + "円";
 
-        // 集計画面表示
+        /* ====== 履歴・集計 ====== */
         const fYear = document.getElementById('hist-year').value;
         const fMonth = document.getElementById('hist-month').value;
-        const fHist = history.filter(h => h.date.startsWith(`${fYear}-${fMonth}`));
+        const fHist = history.filter(h => h.date && h.date.startsWith(`${fYear}-${fMonth}`));
         const fTotalNet = fHist.reduce((sum, h) => sum + h.net, 0);
         const fRate = getRate(fTotalNet);
 
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
-        document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
-        document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
+        document.getElementById('hist-total-income').innerText =
+            Math.floor(fTotalNet * (fRate / 100)).toLocaleString() + "円";
+        document.getElementById('hist-total-sales').innerText =
+            Math.floor(fTotalNet).toLocaleString();
 
-        // 履歴リスト作成
-        document.getElementById('history-list').innerHTML = fHist.sort((a,b) => b.id - a.id).map(h => `
-            <tr>
-                <td style="font-weight:bold;">${h.date.substring(5).replace('-','/')}</td>
-                <td style="font-weight:800; font-size:1.1rem;">${Math.floor(h.net).toLocaleString()}</td>
-                <td class="hist-btns">
-                    <button class="btn-icon btn-pencil" onclick="editData(${h.id})">✏️</button>
-                    <button class="btn-icon btn-trash" onclick="deleteData(${h.id})">🗑️</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px;">なし</td></tr>';
+        document.getElementById('history-list').innerHTML =
+            fHist.sort((a, b) => b.id - a.id).map(h => `
+                <tr>
+                    <td style="font-weight:bold;">${h.date.substring(5).replace('-', '/')}</td>
+                    <td style="font-weight:800; font-size:1.1rem;">${Math.floor(h.net).toLocaleString()}</td>
+                    <td class="hist-btns">
+                        <button class="btn-icon btn-pencil" onclick="editData(${h.id})">✏️</button>
+                        <button class="btn-icon btn-trash" onclick="deleteData(${h.id})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('') ||
+            '<tr><td colspan="3" style="text-align:center; padding:20px;">なし</td></tr>';
     }
 
     function updatePreview() {
         const gross = parseFloat(document.getElementById('input-gross').value) || 0;
+        const curMonth = getCurrentMonth();
+        if (!curMonth) {
+            document.getElementById('preview-area').innerText = '日付を選択してください';
+            return;
+        }
+
         const net = Math.floor(gross / 1.1);
-        const history = DB.load('taxi_v11_hist', []);
-        const curMonth = document.getElementById('work-date').value.substring(0, 7);
-        const total = history.filter(h => h.date.startsWith(curMonth)).reduce((sum, h) => sum + h.net, 0);
+        const history = DB.load(STORAGE.HIST, []);
+        const total = history
+            .filter(h => h.date && h.date.startsWith(curMonth))
+            .reduce((sum, h) => sum + h.net, 0);
+
         const combined = total + net;
-        document.getElementById('preview-area').innerText = `手取り予測: ${Math.floor(combined * (getRate(combined)/100)).toLocaleString()}円`;
+        const rate = getRate(combined);
+
+        document.getElementById('preview-area').innerText =
+            `今月見込み手取り: ${Math.floor(combined * (rate / 100)).toLocaleString()}円`;
     }
 
     function saveData() {
         const date = document.getElementById('work-date').value;
         const gross = parseFloat(document.getElementById('input-gross').value);
+
+        if (!date) {
+            alert('日付を選択してください');
+            return;
+        }
         if (!gross) return;
-        const h = DB.load('taxi_v11_hist', []);
-        h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) });
-        DB.save('taxi_v11_hist', h);
+
+        const h = DB.load(STORAGE.HIST, []);
+        h.push({
+            id: Date.now(),
+            date,
+            gross,
+            net: Math.floor(gross / 1.1)
+        });
+
+        DB.save(STORAGE.HIST, h);
         document.getElementById('input-gross').value = '';
         refresh();
     }
 
-    function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
-    function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
-    function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
-    function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); refresh(); }
+    function deleteData(id) {
+        if (!confirm('消去しますか？')) return;
+        const h = DB.load(STORAGE.HIST, []);
+        DB.save(STORAGE.HIST, h.filter(x => x.id !== id));
+        refresh();
+    }
 
-    // 初期化
+    function editData(id) {
+        const h = DB.load(STORAGE.HIST, []);
+        const i = h.find(x => x.id === id);
+        const n = prompt('税込修正', i.gross);
+        if (!n) return;
+        i.gross = parseFloat(n);
+        i.net = Math.floor(i.gross / 1.1);
+        DB.save(STORAGE.HIST, h);
+        refresh();
+    }
+
+    function saveSettings() {
+        DB.save(STORAGE.SETS, {
+            goal: parseFloat(document.getElementById('set-goal').value) || 550000,
+            days: parseFloat(document.getElementById('set-days').value) || 12
+        });
+        refresh();
+    }
+
+    function showPage(p) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
+        document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('page-' + p).classList.add('active-tab');
+        document.getElementById('nav-' + p).classList.add('active');
+        refresh();
+    }
+
+    /* ====== 初期化 ====== */
     document.getElementById('work-date').valueAsDate = new Date();
+
     const yr = document.getElementById('hist-year');
     const mt = document.getElementById('hist-month');
     const now = new Date();
-    for(let y=2026; y>=2024; y--) { let o = document.createElement('option'); o.value=y; o.text=y+'年'; yr.add(o); }
-    for(let m=1; m<=12; m++) { let o = document.createElement('option'); o.value=String(m).padStart(2,'0'); o.text=m+'月'; if(m === now.getMonth()+1) o.selected = true; mt.add(o); }
-    const s = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
-    document.getElementById('set-goal').value = s.goal; document.getElementById('set-days').value = s.days;
+
+    for (let y = 2026; y >= 2024; y--) {
+        let o = document.createElement('option');
+        o.value = y;
+        o.text = y + '年';
+        yr.add(o);
+    }
+    for (let m = 1; m <= 12; m++) {
+        let o = document.createElement('option');
+        o.value = String(m).padStart(2, '0');
+        o.text = m + '月';
+        if (m === now.getMonth() + 1) o.selected = true;
+        mt.add(o);
+    }
+
+    const s = DB.load(STORAGE.SETS, { goal: 550000, days: 12 });
+    document.getElementById('set-goal').value = s.goal;
+    document.getElementById('set-days').value = s.days;
+
     refresh();
 </script>
-</body>
-</html>
