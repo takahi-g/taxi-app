@@ -78,7 +78,7 @@ input[type=number]{
   font-size:1.2rem;
   font-weight:bold;
 }
-nav{
+{
   position:fixed;
   bottom:0;left:0;
   width:100%;
@@ -87,14 +87,14 @@ nav{
   display:flex;
   height:65px;
 }
-nav button{
+ button{
   flex:1;
   border:none;
   background:none;
   font-size:1rem;
   color:#666;
 }
-nav button.active-tab{
+ button.active-tab{
   color:var(--ios-blue);
   font-weight:bold;
 }
@@ -177,9 +177,16 @@ td{padding:12px 4px;border-bottom:1px solid #eee;text-align:right}
 </div>
 
 <nav>
-  <button class="active-tab" onclick="showPage('input')">入力</button>
-  <button onclick="showPage('history')">履歴</button>
+  <button id="tab-input" class="active-tab" onclick="showPage('input')">
+    <div class="tab-icon">✏️</div>
+    <div class="tab-label">入力</div>
+  </button>
+  <button id="tab-history" onclick="showPage('history')">
+    <div class="tab-icon">📊</div>
+    <div class="tab-label">履歴</div>
+  </button>
 </nav>
+
 
 <script>
 const LS_KEY="taxi_history";
