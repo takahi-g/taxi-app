@@ -2,220 +2,256 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>タク計 マスター Ver2.6</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>タク計 マスター</title>
 
 <style>
 :root{
-  --ios-blue:#007AFF;
-  --ios-red:#ff3b30;
+  --blue:#007AFF;
+  --red:#ff3b30;
   --soft-blue:#e7f2ff;
   --soft-red:#fff1f0;
 }
-
 body{
-  font-family:-apple-system,sans-serif;
-  background:#f0f4f8;
   margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
+  background:#f0f4f8;
   padding:12px;
-  padding-bottom:110px;
-  color:#333;
+  padding-bottom:90px;
 }
-
 .card{
   background:#fff;
   border-radius:16px;
   padding:15px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
   margin-bottom:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
-
 h1{
   font-size:1rem;
-  color:var(--ios-blue);
-  margin-bottom:10px;
+  color:var(--blue);
+  margin:0 0 10px;
 }
-
-input{
+input,select{
   width:100%;
   padding:12px;
   border-radius:12px;
   border:2px solid #eee;
+  font-size:1.1rem;
   margin-bottom:10px;
 }
-
-input[type="number"]{
-  font-size:2.5rem;
-  font-weight:bold;
+input[type=number]{
+  font-size:2.6rem;
   text-align:center;
-  color:var(--ios-blue);
+  font-weight:bold;
+  color:var(--blue);
 }
-
 .sales-label{
   text-align:center;
-  font-size:1.3rem;
   font-weight:900;
+  margin-bottom:6px;
   display:block;
 }
-
 .result{
-  background:#fdfdfd;
-  padding:15px;
-  border-radius:12px;
-  text-align:center;
   border:2px solid #eef6ff;
+  border-radius:12px;
+  padding:15px;
+  text-align:center;
 }
-
 .income{
   font-size:2.4rem;
   font-weight:bold;
-  color:var(--ios-red);
+  color:var(--red);
 }
-
 .btn-save{
   width:100%;
-  padding:16px;
-  background:var(--ios-blue);
+  padding:18px;
+  background:var(--blue);
   color:#fff;
   border:none;
-  border-radius:14px;
+  border-radius:15px;
   font-size:1.2rem;
   font-weight:bold;
+  margin-top:10px;
 }
-
-.tab-content{display:none;}
-.tab-content.active{display:block;}
-
-table{width:100%;border-collapse:collapse;}
-td,th{padding:10px;border-bottom:1px solid #eee;}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th{
+  font-size:.8rem;
+  color:#666;
+  border-bottom:2px solid #eee;
+}
+td{
+  padding:10px 4px;
+  border-bottom:1px solid #eee;
+}
 .td-date{text-align:left;}
-
-.btn-group{display:flex;gap:6px;}
-.action-btn{
-  width:44px;height:44px;
-  border-radius:12px;
-  border:none;
-  font-size:1.2rem;
+.btn-group{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
 }
-.delete-btn{background:var(--soft-red);color:var(--ios-red);}
+.action-btn{
+  width:46px;
+  height:46px;
+  border:none;
+  border-radius:14px;
+  font-size:1.4rem;
+}
+.edit-btn{background:var(--soft-blue); color:var(--blue);}
+.delete-btn{background:var(--soft-red); color:var(--red);}
 
-/* 押しやすい下タブ */
+/* タブ */
 nav{
   position:fixed;
   bottom:0;left:0;
   width:100%;
-  height:80px;
+  height:78px;
   background:#fff;
   display:flex;
   border-top:1px solid #ddd;
 }
-
 nav button{
   flex:1;
   border:none;
   background:none;
-  font-size:1rem;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font-size:.85rem;
+  color:#888;
 }
-
 nav button.active{
-  color:var(--ios-blue);
-  font-weight:bold;
+  color:var(--blue);
   background:#f0f7ff;
-  border-top:3px solid var(--ios-blue);
+  font-weight:bold;
+  border-top:3px solid var(--blue);
 }
+.tab{display:none;}
+.tab.active{display:block;}
 </style>
 </head>
 
 <body>
 
-<div id="inputPage" class="tab-content active">
+<!-- ===== 入力 ===== -->
+<div id="tab-input" class="tab active">
   <div class="card">
     <h1>💰 売上入力</h1>
     <input type="date" id="workDate">
-    <span class="sales-label">税抜売上入力</span>
+    <span class="sales-label">税抜売上</span>
     <input type="number" id="sales" placeholder="0" oninput="calc()">
 
-    <div id="resArea" class="result" style="display:none;">
-      <div>歩合 <span id="rate">55</span>%</div>
+    <div id="result" class="result" style="display:none">
+      <div>歩合 <span id="rate">--</span>%</div>
       <div class="income"><span id="income">0</span>円</div>
-      <button class="btn-save" onclick="saveData()">保存</button>
+      <button class="btn-save" onclick="save()">保存する</button>
     </div>
   </div>
 </div>
 
-<div id="historyPage" class="tab-content">
+<!-- ===== 履歴 ===== -->
+<div id="tab-history" class="tab">
   <div class="card">
-    <h1>📊 履歴</h1>
+    <h1>📅 履歴</h1>
     <table>
-      <tbody id="historyList"></tbody>
+      <thead>
+        <tr><th style="text-align:left">日付</th><th>売上</th><th></th></tr>
+      </thead>
+      <tbody id="list"></tbody>
     </table>
   </div>
 </div>
 
+<!-- ===== ナビ ===== -->
 <nav>
-  <button id="tabInput" class="active" onclick="showPage('input')">✏️ 入力</button>
-  <button id="tabHistory" onclick="showPage('history')">📊 履歴</button>
+  <button id="btn-input" class="active" onclick="showTab('input')">
+    <div>✏️</div><div>入力</div>
+  </button>
+  <button id="btn-history" onclick="showTab('history')">
+    <div>📊</div><div>履歴</div>
+  </button>
 </nav>
 
 <script>
-const workDate = document.getElementById("workDate");
-const sales = document.getElementById("sales");
-const resArea = document.getElementById("resArea");
-const income = document.getElementById("income");
-const historyList = document.getElementById("historyList");
+const KEY="taxi_history";
+const $=id=>document.getElementById(id);
 
-workDate.valueAsDate = new Date();
+$("workDate").valueAsDate=new Date();
+
+function rate(sum){
+  if(sum>=550000) return 60.8;
+  if(sum>=470000) return 57.9;
+  if(sum>=420000) return 55.0;
+  return 55.0;
+}
+
+function load(){return JSON.parse(localStorage.getItem(KEY)||"[]");}
+function saveDB(d){localStorage.setItem(KEY,JSON.stringify(d));}
 
 function calc(){
-  const s = Number(sales.value);
-  if(!s){ resArea.style.display="none"; return; }
-  resArea.style.display="block";
-  income.textContent = Math.floor(s*0.55).toLocaleString();
+  const s=Number($("sales").value);
+  if(!s){$("result").style.display="none";return;}
+  $("result").style.display="block";
+  const hist=load();
+  const ym=$("workDate").value.slice(0,7);
+  const sum=hist.filter(x=>x.date.startsWith(ym)).reduce((a,b)=>a+b.sales,0)+s;
+  const r=rate(sum);
+  $("rate").innerText=r;
+  $("income").innerText=Math.floor(s*r/100).toLocaleString();
 }
 
-function saveData(){
-  const s = Number(sales.value);
-  const d = workDate.value;
-  if(!s || !d) return alert("入力してね");
-  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]");
-  h.push({id:Date.now(),date:d,sales:s});
-  localStorage.setItem("taxi_history",JSON.stringify(h));
-  sales.value="";
-  resArea.style.display="none";
+function save(){
+  const s=Number($("sales").value);
+  if(!s) return;
+  const h=load();
+  h.push({id:Date.now(),date:$("workDate").value,sales:s});
+  saveDB(h);
+  $("sales").value="";
+  $("result").style.display="none";
+  render();
 }
 
-function updateHistory(){
-  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]");
-  historyList.innerHTML = h.map(d=>`
+function render(){
+  const h=load().sort((a,b)=>b.id-a.id);
+  $("list").innerHTML=h.map(d=>`
     <tr>
-      <td class="td-date">${d.date}</td>
-      <td>${d.sales.toLocaleString()}</td>
+      <td class="td-date">${d.date.slice(5).replace("-","/")}</td>
+      <td style="font-weight:bold">${d.sales.toLocaleString()}</td>
       <td>
-        <button class="action-btn delete-btn" onclick="del(${d.id})">🗑️</button>
+        <div class="btn-group">
+          <button class="action-btn edit-btn" onclick="edit(${d.id})">✏️</button>
+          <button class="action-btn delete-btn" onclick="del(${d.id})">🗑️</button>
+        </div>
       </td>
     </tr>`).join("");
 }
 
-function del(id){
-  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]")
-    .filter(x=>x.id!==id);
-  localStorage.setItem("taxi_history",JSON.stringify(h));
-  updateHistory();
+function edit(id){
+  const h=load();
+  const i=h.find(x=>x.id===id);
+  const v=prompt("売上修正",i.sales);
+  if(v===null||isNaN(v))return;
+  i.sales=Number(v);
+  saveDB(h); render();
 }
 
-function showPage(p){
-  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+function del(id){
+  if(!confirm("削除する？"))return;
+  saveDB(load().filter(x=>x.id!==id));
+  render();
+}
+
+function showTab(t){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
-  if(p==="input"){
-    document.getElementById("inputPage").classList.add("active");
-    document.getElementById("tabInput").classList.add("active");
-  }else{
-    document.getElementById("historyPage").classList.add("active");
-    document.getElementById("tabHistory").classList.add("active");
-    updateHistory();
-  }
+  $("tab-"+t).classList.add("active");
+  $("btn-"+t).classList.add("active");
+  if(t==="history") render();
 }
 </script>
-
 </body>
 </html>
