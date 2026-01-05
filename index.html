@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver3.0</title>
+    <title>タク計 マスター Ver3.1</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
@@ -13,16 +13,21 @@
         input, select { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fafafa; margin-bottom: 10px; display: block; -webkit-appearance: none; }
         input[type="number"] { font-size: 2.2rem; text-align: center; font-weight: bold; color: var(--ios-blue); padding: 15px; }
         
-        .target-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; transition: 0.3s; }
+        .target-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; }
         .daily-norm-card { background: #eef6ff; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; }
 
         .total-badge { font-size: 0.85rem; background: #333; padding: 5px 12px; border-radius: 20px; margin-bottom: 10px; display: inline-block; color: white; }
         .result { background: #fdfdfd; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 2px solid #eef6ff; }
         .btn-save { width: 100%; min-height: 60px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 1.4rem; margin-top: 10px; }
         
+        /* 履歴の操作ボタン */
+        .btn-group { display: flex; gap: 8px; justify-content: flex-end; }
+        .action-btn { width: 44px; height: 44px; border-radius: 10px; border: none; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+        .edit-btn { background: var(--soft-blue); color: var(--ios-blue); }
+        .delete-btn { background: var(--soft-red); color: var(--ios-red); }
+
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
         nav button { flex: 1; border: none; background: none; font-size: 0.8rem; color: #666; padding: 5px; }
-        nav button i { display: block; font-size: 1.4rem; margin-bottom: 2px; }
         nav button.active-tab { color: var(--ios-blue); font-weight: bold; }
         .tab-content { display: none; }
         .active { display: block; }
@@ -65,9 +70,11 @@
             <h1>📅 履歴</h1>
             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                 <select id="view-year" onchange="updateHistory()"></select>
-                <select id="view-mode" onchange="updateHistory()"><option value="month">今月</option><option value="year">年別</option></select>
+                <select id="view-mode" onchange="updateHistory()"><option value="month">今月の詳細</option><option value="year">今年の月別</option></select>
             </div>
-            <table style="width:100%; text-align:right; border-collapse:collapse;"><tbody id="history-list"></tbody></table>
+            <table style="width:100%; border-collapse:collapse;">
+                <tbody id="history-list"></tbody>
+            </table>
         </div>
     </div>
 
@@ -75,13 +82,13 @@
         <div class="card">
             <h1>⚙️ 目標・出勤設定</h1>
             <div style="margin-bottom:15px;">
-                <label style="font-size:0.9rem; color:#666;">月間目標 (税抜)</label>
-                <input type="number" id="goal-amount" placeholder="550000" oninput="saveSettings()">
+                <label style="font-size:0.9rem; color:#666; font-weight:bold;">月間目標 (税抜)</label>
+                <input type="number" id="goal-amount" oninput="saveSettings()">
             </div>
             <div style="margin-bottom:15px;">
-                <label style="font-size:0.9rem; color:#666;">今月の残り出勤日数</label>
-                <input type="number" id="remain-days" placeholder="10" oninput="saveSettings()">
-                <p style="font-size:0.75rem; color:#888;">※今日を含めた残りの回数を入れてね</p>
+                <label style="font-size:0.9rem; color:#666; font-weight:bold;">今月の残り出勤日数</label>
+                <input type="number" id="remain-days" oninput="saveSettings()">
+                <p style="font-size:0.75rem; color:#888;">※今日を含めた残りの回数</p>
             </div>
             <div class="daily-norm-card">
                 <div style="font-size: 0.85rem; color: #666;">調整後の1日ノルマ (税抜)</div>
@@ -91,9 +98,9 @@
     </div>
 
     <nav>
-        <button id="tab1" class="active-tab" onclick="showPage('input')"><i>💰</i>入力</button>
-        <button id="tab2" onclick="showPage('history')"><i>📅</i>履歴</button>
-        <button id="tab3" onclick="showPage('setting')"><i>⚙️</i>設定</button>
+        <button id="tab1" class="active-tab" onclick="showPage('input')">💰入力</button>
+        <button id="tab2" onclick="showPage('history')">📅履歴</button>
+        <button id="tab3" onclick="showPage('setting')">⚙️設定</button>
     </nav>
 
     <script>
@@ -121,15 +128,11 @@
             const targetMonth = dInput.substring(0, 7);
             const settings = storage.get('taxi_settings', { goal: 550000, days: 12 });
 
-            // 今月の既得売上（今日を除く）
             const pastSalesInMonth = history
                 .filter(d => d.date.startsWith(targetMonth) && d.date !== dInput)
                 .reduce((sum, item) => sum + item.sales, 0);
 
-            // 今日の現在の売上
             const todaySales = history.find(d => d.date === dInput)?.sales || 0;
-
-            // 残りのノルマ計算： (目標 - 今月これまでの売上) / 残りの日数
             const remainingGoal = settings.goal - pastSalesInMonth;
             const dailyNorm = Math.max(0, Math.ceil(remainingGoal / settings.days));
 
@@ -185,13 +188,54 @@
             const list = document.getElementById('history-list');
             const now = new Date();
             let totalS = 0;
-            const targetMonthStr = selYear + '-' + String(now.getMonth() + 1).padStart(2, '0');
-            const filtered = history.filter(d => d.date.startsWith(targetMonthStr));
-            filtered.forEach(d => totalS += d.sales);
-            list.innerHTML = filtered.sort((a,b) => b.id - a.id).map(d => `<tr><td style="text-align:left; padding:12px; border-bottom:1px solid #eee;">${d.date.substring(5)}</td><td style="font-weight:bold; padding:12px; border-bottom:1px solid #eee;">${Math.floor(d.sales).toLocaleString()}円</td></tr>`).join('');
-            document.getElementById('total-label').innerText = selYear + '年' + (now.getMonth()+1) + '月の合計(税抜)';
+
+            if (mode === 'month') {
+                const targetMonthStr = selYear + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                const filtered = history.filter(d => d.date.startsWith(targetMonthStr));
+                filtered.forEach(d => totalS += d.sales);
+                list.innerHTML = filtered.sort((a,b) => b.id - a.id).map(d => `
+                    <tr>
+                        <td style="text-align:left; padding:12px; border-bottom:1px solid #eee;">${d.date.substring(5)}</td>
+                        <td style="font-weight:bold; padding:12px; border-bottom:1px solid #eee;">${Math.floor(d.sales).toLocaleString()}円</td>
+                        <td style="padding:12px; border-bottom:1px solid #eee;">
+                            <div class="btn-group">
+                                <button class="action-btn edit-btn" onclick="editItem(${d.id})">✏️</button>
+                                <button class="action-btn delete-btn" onclick="deleteItem(${d.id})">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            } else {
+                // 年別表示
+                const yearData = {};
+                history.filter(d => d.date.startsWith(selYear)).forEach(d => {
+                    const m = d.date.substring(0, 7);
+                    yearData[m] = (yearData[m] || 0) + d.sales;
+                });
+                list.innerHTML = Object.keys(yearData).sort().reverse().map(m => {
+                    totalS += yearData[m];
+                    return `<tr><td style="text-align:left; padding:12px;">${m.substring(5)}月</td><td style="font-weight:bold; padding:12px;">${Math.floor(yearData[m]).toLocaleString()}円</td><td></td></tr>`;
+                }).join('');
+            }
+            document.getElementById('total-label').innerText = selYear + '年' + (now.getMonth()+1) + '月の合計';
             document.getElementById('total-sales').innerText = Math.floor(totalS).toLocaleString();
             document.getElementById('total-income').innerText = Math.floor(totalS * (getRate(totalS)/100)).toLocaleString() + '円';
+        }
+
+        function editItem(id) {
+            let history = storage.get('taxi_history', []);
+            const item = history.find(d => d.id === id);
+            const newVal = prompt(`${item.date} の売上を修正`, Math.floor(item.sales));
+            if(newVal !== null) {
+                item.sales = parseFloat(newVal);
+                storage.set('taxi_history', history);
+                updateHistory(); updateUI();
+            }
+        }
+        function deleteItem(id) {
+            if(!confirm('削除しますか？')) return;
+            let history = storage.get('taxi_history', []);
+            storage.set('taxi_history', history.filter(d => d.id !== id));
+            updateHistory(); updateUI();
         }
 
         function showPage(page) {
@@ -202,7 +246,6 @@
             else { document.getElementById('setting-page').classList.add('active'); document.getElementById('tab3').classList.add('active-tab'); }
         }
 
-        // 初期設定
         document.getElementById('work-date').valueAsDate = new Date();
         const yearSelect = document.getElementById('view-year');
         for (let y = 2026; y >= 2024; y--) {
