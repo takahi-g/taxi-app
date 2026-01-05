@@ -4,103 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>タク計 プレミアム</title>
+    <title>タク計 プレミアム Ver10.0</title>
     <link rel="apple-touch-icon" href="https://r.jina.ai/i/6f9064c5770146059d044f60f64c6328">
-    
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-orange: #ff9500; --bg: #f2f2f7; --card: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; }
         
-        /* ターゲットヒーローエリア */
-        .target-hero { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,122,255,0.3); }
-        .target-hero small { font-size: 0.9rem; opacity: 0.8; }
-        .target-hero .val { font-size: 2.6rem; font-weight: 800; margin: 10px 0; letter-spacing: -1px; }
+        /* ノルマ表示 */
+        .target-hero { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,122,255,0.2); }
+        .target-hero .val { font-size: 2.5rem; font-weight: 800; margin: 10px 0; }
         
-        .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        h2 { font-size: 1rem; color: #8e8e93; margin-top: 0; margin-bottom: 15px; }
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        h2 { font-size: 0.9rem; color: #8e8e93; margin: 0 0 15px 0; }
 
-        /* 日付操作ユニット */
-        .date-unit { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .btn-step { background: #e5e5ea; border: none; border-radius: 12px; width: 50px; height: 50px; font-size: 1.2rem; font-weight: bold; }
-        .date-input-wrap { flex: 1; position: relative; }
-        input[type="date"] { width: 100%; border: 2px solid #e5e5ea; border-radius: 12px; height: 46px; text-align: center; font-size: 1.1rem; font-weight: 600; color: var(--ios-blue); -webkit-appearance: none; }
+        /* 日付操作 */
+        .date-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .btn-step { background: #e5e5ea; border: none; border-radius: 10px; width: 45px; height: 45px; font-weight: bold; }
+        input[type="date"] { flex: 1; border: 2px solid #e5e5ea; border-radius: 10px; height: 42px; text-align: center; font-size: 1rem; font-weight: bold; color: var(--ios-blue); -webkit-appearance: none; }
 
-        /* メイン入力 */
-        .input-main { text-align: center; margin-bottom: 10px; }
-        .input-main label { font-size: 0.9rem; font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
-        .input-main input { width: 90%; border: none; border-bottom: 4px solid var(--ios-blue); font-size: 3rem; text-align: center; font-weight: 800; color: #1c1c1e; outline: none; padding: 10px 0; }
-        .income-preview { color: var(--ios-red); font-weight: bold; font-size: 1.1rem; margin: 10px 0; height: 1.5rem; }
+        /* 入力エリア */
+        .input-box { text-align: center; }
+        .input-box input { width: 85%; border: none; border-bottom: 3px solid var(--ios-blue); font-size: 2.8rem; text-align: center; font-weight: 800; outline: none; padding: 10px 0; background: transparent; }
+        .preview-area { margin: 12px 0; font-weight: bold; font-size: 0.95rem; }
+        .btn-add { width: 100%; background: var(--ios-blue); color: white; border: none; border-radius: 15px; padding: 18px; font-size: 1.3rem; font-weight: bold; margin-top: 10px; }
 
-        .btn-add { width: 100%; background: var(--ios-blue); color: white; border: none; border-radius: 16px; padding: 20px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
-
-        /* 履歴リスト */
-        .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 0.5px solid #c6c6c8; }
-        .hist-item:last-child { border: none; }
-        .hist-info { flex: 1; }
+        /* 履歴・フィルタ */
+        .filter-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        .filter-row select { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #c6c6c8; background: white; font-size: 0.9rem; }
+        .hist-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 0.5px solid #d1d1d6; }
         .hist-info strong { font-size: 1.1rem; }
         .hist-info div { font-size: 0.8rem; color: #8e8e93; }
-        .hist-actions { display: flex; gap: 15px; }
-        .btn-icon { background: none; border: none; font-size: 1.3rem; padding: 5px; }
-
-        /* 設定ページ */
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 0.5px solid #c6c6c8; }
-        .row input { width: 120px; text-align: right; border: none; font-size: 1.1rem; font-weight: 600; color: var(--ios-blue); outline: none; }
+        .btn-icon { background: none; border: none; font-size: 1.2rem; padding: 5px; cursor: pointer; }
 
         /* ナビゲーション */
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 1000; }
+        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(15px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 75px; }
         nav button { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8e8e93; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
-        nav button span { font-size: 0.7rem; font-weight: 600; }
-        nav button i { font-size: 1.5rem; }
+        nav button i { font-size: 1.4rem; font-style: normal; }
+        nav button span { font-size: 0.7rem; font-weight: bold; }
 
         .tab-content { display: none; }
         .active-tab { display: block; }
 
-        #toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 25px; font-size: 0.9rem; z-index: 2000; visibility: hidden; opacity: 0; transition: 0.3s; }
+        /* 設定項目 */
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid #d1d1d6; }
+        .row input { width: 100px; text-align: right; border: none; font-size: 1.1rem; color: var(--ios-blue); font-weight: bold; outline: none; }
+        
+        #toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 25px; border-radius: 30px; font-size: 0.9rem; z-index: 2000; visibility: hidden; opacity: 0; transition: 0.3s; }
         .show-toast { visibility: visible !important; opacity: 1 !important; }
     </style>
 </head>
 <body>
 
-<div id="toast">保存完了！🚕</div>
+<div id="toast">保存したよ！🚕</div>
 
 <div id="page-input" class="tab-content active-tab">
     <div class="target-hero" id="hero-bg">
-        <small id="hero-title">今日の残りノルマ (税抜)</small>
+        <small id="hero-label">今日の残りノルマ (税抜)</small>
         <div class="val" id="disp-norm">0</div>
-        <div id="disp-progress" style="font-size: 0.85rem; opacity: 0.9;">出勤進捗: -- / -- 日</div>
+        <div id="disp-days-info" style="font-size: 0.8rem; opacity: 0.9;">出勤: -- / -- 日</div>
     </div>
 
     <div class="card">
-        <div class="date-unit">
+        <div class="date-ctrl">
             <button class="btn-step" onclick="stepDate(-1)">◀</button>
-            <div class="date-input-wrap">
-                <input type="date" id="work-date" onchange="refresh()">
-            </div>
+            <input type="date" id="work-date" onchange="refresh()">
             <button class="btn-step" onclick="stepDate(1)">▶</button>
         </div>
 
-        <div class="input-main">
-            <div style="background: #1c1c1e; color: white; padding: 8px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px;">
-                今日の合計: <span id="disp-today-sum">0</span>円
+        <div class="input-box">
+            <div style="background: #1c1c1e; color: white; padding: 6px; border-radius: 8px; font-size: 0.8rem; display: inline-block; margin-bottom: 15px;">
+                今日の合計: <span id="disp-today-sum">0</span>円 (税抜)
             </div>
-            <label>本日の税抜売上を追加</label>
-            <input type="number" id="input-sales" pattern="\d*" placeholder="0" oninput="updatePreview()">
-            <div class="income-preview" id="income-preview">手取り予測: 0円</div>
-            <button class="btn-add" onclick="saveData()">売上を追加</button>
+            <label style="display:block; font-size:0.9rem; font-weight:bold; color:#666;">本日の売上を入力 (税込)</label>
+            <input type="number" id="input-sales-gross" pattern="\d*" placeholder="0" oninput="updatePreview()">
+            <div class="preview-area">
+                <div style="color:#666; font-size:0.8rem;">税抜額: <span id="pre-net">0</span>円</div>
+                <div style="color:var(--ios-red); margin-top:4px;">手取り予測: <span id="pre-income">0</span>円</div>
+            </div>
+            <button class="btn-add" onclick="saveData()">売上を追加する</button>
         </div>
     </div>
 </div>
 
 <div id="page-history" class="tab-content">
     <div class="card" style="background: #1c1c1e; color: white; text-align: center;">
-        <h2 style="color: #8e8e93; margin-bottom: 5px;">今月の予想給与</h2>
-        <div style="font-size: 2.2rem; font-weight: 800; color: var(--ios-orange);" id="hist-total-income">0円</div>
-        <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">売上合計: <span id="hist-total-sales">0</span>円</div>
+        <div style="color: #8e8e93; font-size: 0.8rem;" id="hist-title">集計</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--ios-orange);" id="hist-total-income">0円</div>
+        <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">売上合計(税抜): <span id="hist-total-sales">0</span>円</div>
     </div>
+
     <div class="card">
-        <h2>📅 履歴一覧</h2>
+        <h2>📅 履歴フィルタ</h2>
+        <div class="filter-row">
+            <select id="filter-year" onchange="refresh()"></select>
+            <select id="filter-month" onchange="refresh()"></select>
+        </div>
         <div id="history-list"></div>
     </div>
 </div>
@@ -109,18 +108,18 @@
     <div class="card">
         <h2>⚙️ 目標設定</h2>
         <div class="row">
-            <label>目標売上 (税抜)</label>
+            <label>今月の目標 (税抜)</label>
             <input type="number" id="set-goal" oninput="saveSettings()">
         </div>
         <div class="row">
-            <label>月間出勤日数</label>
+            <label>月間の出勤日数</label>
             <input type="number" id="set-days" oninput="saveSettings()">
         </div>
     </div>
-    <div class="card" style="background: #e7f2ff;">
-        <h2>📊 自動計算ステータス</h2>
-        <div class="row"><span>今月の既出勤数</span><span id="stat-worked">0 日</span></div>
-        <div class="row"><span>残り出勤数</span><span id="stat-remain">0 日</span></div>
+    <div class="card" style="background: #eef6ff;">
+        <h2>📊 今月の状況</h2>
+        <div class="row"><span>既に出勤した日数</span><span id="stat-worked">0 日</span></div>
+        <div class="row"><span>残りの出勤日数</span><span id="stat-remain">0 日</span></div>
         <div class="row" style="border:none; font-weight:bold;">
             <span>1日平均ノルマ</span><span id="stat-norm" style="color:var(--ios-blue);">0円</span>
         </div>
@@ -139,8 +138,8 @@
         load: (key, def) => JSON.parse(localStorage.getItem(key)) || def
     };
 
-    // 西鉄タクシー歩合計算
-    function calcIncome(netSales) {
+    // 西鉄タクシー歩合計算（税抜売上から算出）
+    function getIncome(netSales) {
         let rate = 0.55;
         if (netSales >= 550000) rate = 0.608;
         else if (netSales >= 470000) rate = 0.579;
@@ -148,51 +147,59 @@
     }
 
     function refresh() {
-        const history = DB.load('taxi_hist_v9', []);
-        const sets = DB.load('taxi_sets_v9', { goal: 550000, days: 12 });
+        const history = DB.load('taxi_v10_hist', []);
+        const sets = DB.load('taxi_v10_sets', { goal: 550000, days: 12 });
         const selectedDate = document.getElementById('work-date').value;
-        const currentMonth = selectedDate.substring(0, 7);
+        const curMonth = selectedDate.substring(0, 7);
 
-        // 月間データ抽出
-        const monthly = history.filter(h => h.date.startsWith(currentMonth));
-        const totalSales = monthly.reduce((sum, h) => sum + h.sales, 0);
+        // 履歴画面用の年月フィルタ
+        const fYear = document.getElementById('filter-year').value;
+        const fMonth = document.getElementById('filter-month').value;
+        const filterStr = `${fYear}-${fMonth}`;
+
+        // 今月のデータ（ノルマ計算用）
+        const monthly = history.filter(h => h.date.startsWith(curMonth));
+        const totalNetSales = monthly.reduce((sum, h) => sum + h.net, 0);
         const workedDates = [...new Set(monthly.map(h => h.date))];
         const workedCount = workedDates.length;
 
-        // 残り日数の判定
+        // 残り日数の計算（今日がまだ履歴になければカウントを調整）
         const hasWorkToday = history.some(h => h.date === selectedDate);
         const remainDays = Math.max(1, sets.days - (hasWorkToday ? workedCount - 1 : workedCount));
 
-        // ノルマ計算
-        const salesExcludeToday = monthly.filter(h => h.date !== selectedDate).reduce((sum, h) => sum + h.sales, 0);
+        // 今日のノルマ計算
+        const salesExcludeToday = monthly.filter(h => h.date !== selectedDate).reduce((sum, h) => sum + h.net, 0);
         const need = Math.max(0, sets.goal - salesExcludeToday);
-        const dailyNorm = Math.ceil(need / remainDays);
+        const dailyTarget = Math.ceil(need / remainDays);
         
-        const todaySum = monthly.filter(h => h.date === selectedDate).reduce((sum, h) => sum + h.sales, 0);
-        const todayLeft = dailyNorm - todaySum;
+        const todayNetSum = monthly.filter(h => h.date === selectedDate).reduce((sum, h) => sum + h.net, 0);
+        const todayLeft = dailyTarget - todayNetSum;
 
-        // UI反映：入力画面
+        // UI: 入力画面
         const normDisp = document.getElementById('disp-norm');
         const heroBg = document.getElementById('hero-bg');
         if (todayLeft <= 0) {
             normDisp.innerText = "目標達成！";
-            heroBg.style.background = "linear-gradient(135deg, #28a745, #1e7e34)";
+            heroBg.style.background = "var(--ios-orange)";
         } else {
             normDisp.innerText = todayLeft.toLocaleString() + "円";
             heroBg.style.background = "linear-gradient(135deg, #007AFF, #5856D6)";
         }
-        document.getElementById('disp-progress').innerText = `今月の出勤: ${workedCount} / ${sets.days} 日`;
-        document.getElementById('disp-today-sum').innerText = todaySum.toLocaleString();
+        document.getElementById('disp-days-info').innerText = `出勤進捗: ${workedCount} / ${sets.days} 日`;
+        document.getElementById('disp-today-sum').innerText = Math.floor(todayNetSum).toLocaleString();
 
-        // UI反映：履歴画面
-        document.getElementById('hist-total-sales').innerText = totalSales.toLocaleString() + "円";
-        document.getElementById('hist-total-income').innerText = calcIncome(totalSales).toLocaleString() + "円";
-        
-        const listHtml = monthly.sort((a,b) => b.id - a.id).map(h => `
+        // UI: 履歴画面（フィルタされた月を表示）
+        const filteredData = history.filter(h => h.date.startsWith(filterStr));
+        const fTotalNet = filteredData.reduce((sum, h) => sum + h.net, 0);
+        document.getElementById('hist-title').innerText = `${fMonth}月の予想給料`;
+        document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
+        document.getElementById('hist-total-income').innerText = getIncome(fTotalNet).toLocaleString() + "円";
+
+        const listHtml = filteredData.sort((a,b) => b.id - a.id).map(h => `
             <div class="hist-item">
                 <div class="hist-info">
                     <strong>${h.date.split('-')[2]}日</strong>
-                    <div>税抜売上: ${Math.floor(h.sales).toLocaleString()}円</div>
+                    <div>税抜: ${Math.floor(h.net).toLocaleString()}円 (税込:${h.gross.toLocaleString()}円)</div>
                 </div>
                 <div class="hist-actions">
                     <button class="btn-icon" onclick="editData(${h.id})">✏️</button>
@@ -200,60 +207,58 @@
                 </div>
             </div>
         `).join('');
-        document.getElementById('history-list').innerHTML = listHtml || '<div style="text-align:center;padding:20px;color:#999;">履歴なし</div>';
+        document.getElementById('history-list').innerHTML = listHtml || '<div style="text-align:center;padding:20px;color:#999;">データなし</div>';
 
-        // UI反映：設定画面
+        // UI: 設定画面
         document.getElementById('stat-worked').innerText = workedCount + " 日";
         document.getElementById('stat-remain').innerText = remainDays + " 日";
-        document.getElementById('stat-norm').innerText = dailyNorm.toLocaleString() + "円";
+        document.getElementById('stat-norm').innerText = dailyTarget.toLocaleString() + "円";
         
         updatePreview();
     }
 
-    function stepDate(n) {
-        const d = new Date(document.getElementById('work-date').value);
-        d.setDate(d.getDate() + n);
-        document.getElementById('work-date').valueAsDate = d;
-        refresh();
-    }
-
     function updatePreview() {
-        const val = parseFloat(document.getElementById('input-sales').value) || 0;
-        const history = DB.load('taxi_hist_v9', []);
+        const gross = parseFloat(document.getElementById('input-sales-gross').value) || 0;
+        const net = Math.floor(gross / 1.1);
+        const history = DB.load('taxi_v10_hist', []);
         const month = document.getElementById('work-date').value.substring(0, 7);
-        const currentTotal = history.filter(h => h.date.startsWith(month)).reduce((sum, h) => sum + h.sales, 0);
-        document.getElementById('income-preview').innerText = `手取り予測: ${calcIncome(currentTotal + val).toLocaleString()}円`;
+        const currentTotal = history.filter(h => h.date.startsWith(month)).reduce((sum, h) => sum + h.net, 0);
+        
+        document.getElementById('pre-net').innerText = net.toLocaleString();
+        document.getElementById('pre-income').innerText = getIncome(currentTotal + net).toLocaleString();
     }
 
     function saveData() {
         const date = document.getElementById('work-date').value;
-        const sales = parseFloat(document.getElementById('input-sales').value);
-        if (!sales) return;
+        const gross = parseFloat(document.getElementById('input-sales-gross').value);
+        if (!gross) return;
 
-        const history = DB.load('taxi_hist_v9', []);
-        history.push({ id: Date.now(), date, sales });
-        DB.save('taxi_hist_v9', history);
+        const history = DB.load('taxi_v10_hist', []);
+        history.push({ id: Date.now(), date, gross: gross, net: Math.floor(gross / 1.1) });
+        DB.save('taxi_v10_hist', history);
 
-        document.getElementById('input-sales').value = '';
+        document.getElementById('input-sales-gross').value = '';
         showToast("保存完了！🚕");
         refresh();
     }
 
     function deleteData(id) {
-        if (!confirm('本当にこの履歴を削除する？')) return;
-        let history = DB.load('taxi_hist_v9', []);
+        if (!confirm('削除していい？')) return;
+        let history = DB.load('taxi_v10_hist', []);
         history = history.filter(h => h.id !== id);
-        DB.save('taxi_hist_v9', history);
+        DB.save('taxi_v10_hist', history);
         refresh();
     }
 
     function editData(id) {
-        let history = DB.load('taxi_hist_v9', []);
+        let history = DB.load('taxi_v10_hist', []);
         const item = history.find(h => h.id === id);
-        const newVal = prompt(`${item.date} の売上を修正（税抜）`, Math.floor(item.sales));
+        const newVal = prompt(`${item.date} の売上を修正（税込で入力）`, item.gross);
         if (newVal !== null) {
-            item.sales = parseFloat(newVal) || 0;
-            DB.save('taxi_hist_v9', history);
+            const g = parseFloat(newVal) || 0;
+            item.gross = g;
+            item.net = Math.floor(g / 1.1);
+            DB.save('taxi_v10_hist', history);
             refresh();
         }
     }
@@ -263,7 +268,14 @@
             goal: parseFloat(document.getElementById('set-goal').value) || 550000,
             days: parseFloat(document.getElementById('set-days').value) || 12
         };
-        DB.save('taxi_sets_v9', data);
+        DB.save('taxi_v10_sets', data);
+        refresh();
+    }
+
+    function stepDate(n) {
+        const d = new Date(document.getElementById('work-date').value);
+        d.setDate(d.getDate() + n);
+        document.getElementById('work-date').valueAsDate = d;
         refresh();
     }
 
@@ -277,17 +289,31 @@
 
     function showToast(msg) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.classList.add('show-toast');
+        t.innerText = msg; t.classList.add('show-toast');
         setTimeout(() => t.classList.remove('show-toast'), 2000);
     }
 
-    // 初期起動
+    // 初期化処理
     const today = new Date();
     document.getElementById('work-date').valueAsDate = today;
-    const s = DB.load('taxi_sets_v9', { goal: 550000, days: 12 });
+
+    // フィルタ用の年月生成
+    const yr = document.getElementById('filter-year');
+    for(let y=today.getFullYear(); y>=2024; y--) {
+        let o = document.createElement('option'); o.value=y; o.text=y+'年'; yr.add(o);
+    }
+    const mt = document.getElementById('filter-month');
+    for(let m=1; m<=12; m++) {
+        let o = document.createElement('option'); 
+        o.value=String(m).padStart(2,'0'); o.text=m+'月'; 
+        if(m === today.getMonth()+1) o.selected = true;
+        mt.add(o);
+    }
+
+    const s = DB.load('taxi_v10_sets', { goal: 550000, days: 12 });
     document.getElementById('set-goal').value = s.goal;
     document.getElementById('set-days').value = s.days;
+
     refresh();
 </script>
 </body>
