@@ -3,111 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>タク計 マスター</title>
+<title>タク計</title>
 
 <style>
 :root{
-  --blue:#007AFF;
+  --blue1:#0a6cff;
+  --blue2:#4f6df5;
+  --bg:#f2f2f7;
   --red:#ff3b30;
-  --soft-blue:#e7f2ff;
-  --soft-red:#fff1f0;
 }
 body{
   margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f0f4f8;
-  padding:12px;
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   padding-bottom:90px;
 }
+
+/* ===== 上部カード ===== */
+.top-card{
+  margin:15px;
+  padding:24px;
+  border-radius:24px;
+  background:linear-gradient(135deg,var(--blue1),var(--blue2));
+  color:#fff;
+  text-align:center;
+  box-shadow:0 10px 25px rgba(0,0,0,.15);
+}
+.top-card .label{
+  opacity:.9;
+  font-size:.9rem;
+}
+.top-card .big{
+  font-size:3rem;
+  font-weight:900;
+  margin:10px 0;
+}
+.top-card .sub{
+  opacity:.85;
+  font-size:.9rem;
+}
+
+/* ===== 白カード ===== */
 .card{
   background:#fff;
-  border-radius:16px;
-  padding:15px;
-  margin-bottom:15px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  margin:15px;
+  padding:20px;
+  border-radius:22px;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
 }
-h1{
-  font-size:1rem;
-  color:var(--blue);
-  margin:0 0 10px;
-}
-input,select{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:2px solid #eee;
-  font-size:1.1rem;
-  margin-bottom:10px;
-}
-input[type=number]{
-  font-size:2.6rem;
-  text-align:center;
-  font-weight:bold;
-  color:var(--blue);
-}
-.sales-label{
-  text-align:center;
-  font-weight:900;
-  margin-bottom:6px;
-  display:block;
-}
-.result{
-  border:2px solid #eef6ff;
-  border-radius:12px;
-  padding:15px;
-  text-align:center;
-}
-.income{
-  font-size:2.4rem;
-  font-weight:bold;
-  color:var(--red);
-}
-.btn-save{
-  width:100%;
-  padding:18px;
-  background:var(--blue);
-  color:#fff;
-  border:none;
-  border-radius:15px;
-  font-size:1.2rem;
-  font-weight:bold;
-  margin-top:10px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-th{
-  font-size:.8rem;
-  color:#666;
-  border-bottom:2px solid #eee;
-}
-td{
-  padding:10px 4px;
-  border-bottom:1px solid #eee;
-}
-.td-date{text-align:left;}
-.btn-group{
+
+/* 日付 */
+.date-row{
   display:flex;
-  gap:10px;
-  justify-content:flex-end;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:15px;
 }
-.action-btn{
-  width:46px;
-  height:46px;
+.date-btn{
+  width:44px;
+  height:44px;
+  border-radius:50%;
   border:none;
-  border-radius:14px;
+  background:#e5e5ea;
   font-size:1.4rem;
 }
-.edit-btn{background:var(--soft-blue); color:var(--blue);}
-.delete-btn{background:var(--soft-red); color:var(--red);}
+.date-text{
+  font-weight:bold;
+  font-size:1.1rem;
+}
 
-/* タブ */
+/* 今日合計 */
+.today-total{
+  background:#111;
+  color:#fff;
+  padding:12px;
+  border-radius:14px;
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:20px;
+}
+
+/* 入力 */
+.input-area{
+  text-align:center;
+}
+.input-area .label{
+  color:#888;
+  margin-bottom:8px;
+}
+.input-area input{
+  width:100%;
+  border:none;
+  font-size:3.5rem;
+  text-align:center;
+  font-weight:900;
+  outline:none;
+}
+.bar{
+  height:4px;
+  background:#007aff;
+  border-radius:4px;
+  margin:10px 0 14px;
+}
+.predict{
+  color:var(--red);
+  font-weight:bold;
+  font-size:1.2rem;
+  margin-bottom:20px;
+}
+.save-btn{
+  width:100%;
+  padding:18px;
+  border:none;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--blue1),var(--blue2));
+  color:#fff;
+  font-size:1.3rem;
+  font-weight:bold;
+}
+
+/* ===== ナビ ===== */
 nav{
   position:fixed;
-  bottom:0;left:0;
+  bottom:0; left:0;
   width:100%;
-  height:78px;
+  height:80px;
   background:#fff;
   display:flex;
   border-top:1px solid #ddd;
@@ -118,140 +138,56 @@ nav button{
   background:none;
   display:flex;
   flex-direction:column;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   gap:4px;
-  font-size:.85rem;
-  color:#888;
+  font-size:.75rem;
+  color:#999;
 }
 nav button.active{
-  color:var(--blue);
-  background:#f0f7ff;
+  color:#007aff;
   font-weight:bold;
-  border-top:3px solid var(--blue);
 }
-.tab{display:none;}
-.tab.active{display:block;}
+nav span{
+  font-size:1.4rem;
+}
 </style>
 </head>
 
 <body>
 
-<!-- ===== 入力 ===== -->
-<div id="tab-input" class="tab active">
-  <div class="card">
-    <h1>💰 売上入力</h1>
-    <input type="date" id="workDate">
-    <span class="sales-label">税抜売上</span>
-    <input type="number" id="sales" placeholder="0" oninput="calc()">
+<!-- 上 -->
+<div class="top-card">
+  <div class="label">今日の残りノルマ（税抜）</div>
+  <div class="big">12,000円</div>
+  <div class="sub">今月の出勤：3 / 12 日</div>
+</div>
 
-    <div id="result" class="result" style="display:none">
-      <div>歩合 <span id="rate">--</span>%</div>
-      <div class="income"><span id="income">0</span>円</div>
-      <button class="btn-save" onclick="save()">保存する</button>
-    </div>
+<!-- 入力 -->
+<div class="card">
+  <div class="date-row">
+    <button class="date-btn">◀</button>
+    <div class="date-text">2026/01/03</div>
+    <button class="date-btn">▶</button>
+  </div>
+
+  <div class="today-total">今日の合計：38,000円</div>
+
+  <div class="input-area">
+    <div class="label">本日の税抜売上を追加</div>
+    <input type="number" placeholder="0">
+    <div class="bar"></div>
+    <div class="predict">手取り予測：48,400円</div>
+    <button class="save-btn">売上を追加</button>
   </div>
 </div>
 
-<!-- ===== 履歴 ===== -->
-<div id="tab-history" class="tab">
-  <div class="card">
-    <h1>📅 履歴</h1>
-    <table>
-      <thead>
-        <tr><th style="text-align:left">日付</th><th>売上</th><th></th></tr>
-      </thead>
-      <tbody id="list"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- ===== ナビ ===== -->
+<!-- ナビ -->
 <nav>
-  <button id="btn-input" class="active" onclick="showTab('input')">
-    <div>✏️</div><div>入力</div>
-  </button>
-  <button id="btn-history" onclick="showTab('history')">
-    <div>📊</div><div>履歴</div>
-  </button>
+  <button class="active"><span>💰</span>入力</button>
+  <button><span>📅</span>履歴</button>
+  <button><span>⚙️</span>設定</button>
 </nav>
 
-<script>
-const KEY="taxi_history";
-const $=id=>document.getElementById(id);
-
-$("workDate").valueAsDate=new Date();
-
-function rate(sum){
-  if(sum>=550000) return 60.8;
-  if(sum>=470000) return 57.9;
-  if(sum>=420000) return 55.0;
-  return 55.0;
-}
-
-function load(){return JSON.parse(localStorage.getItem(KEY)||"[]");}
-function saveDB(d){localStorage.setItem(KEY,JSON.stringify(d));}
-
-function calc(){
-  const s=Number($("sales").value);
-  if(!s){$("result").style.display="none";return;}
-  $("result").style.display="block";
-  const hist=load();
-  const ym=$("workDate").value.slice(0,7);
-  const sum=hist.filter(x=>x.date.startsWith(ym)).reduce((a,b)=>a+b.sales,0)+s;
-  const r=rate(sum);
-  $("rate").innerText=r;
-  $("income").innerText=Math.floor(s*r/100).toLocaleString();
-}
-
-function save(){
-  const s=Number($("sales").value);
-  if(!s) return;
-  const h=load();
-  h.push({id:Date.now(),date:$("workDate").value,sales:s});
-  saveDB(h);
-  $("sales").value="";
-  $("result").style.display="none";
-  render();
-}
-
-function render(){
-  const h=load().sort((a,b)=>b.id-a.id);
-  $("list").innerHTML=h.map(d=>`
-    <tr>
-      <td class="td-date">${d.date.slice(5).replace("-","/")}</td>
-      <td style="font-weight:bold">${d.sales.toLocaleString()}</td>
-      <td>
-        <div class="btn-group">
-          <button class="action-btn edit-btn" onclick="edit(${d.id})">✏️</button>
-          <button class="action-btn delete-btn" onclick="del(${d.id})">🗑️</button>
-        </div>
-      </td>
-    </tr>`).join("");
-}
-
-function edit(id){
-  const h=load();
-  const i=h.find(x=>x.id===id);
-  const v=prompt("売上修正",i.sales);
-  if(v===null||isNaN(v))return;
-  i.sales=Number(v);
-  saveDB(h); render();
-}
-
-function del(id){
-  if(!confirm("削除する？"))return;
-  saveDB(load().filter(x=>x.id!==id));
-  render();
-}
-
-function showTab(t){
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
-  $("tab-"+t).classList.add("active");
-  $("btn-"+t).classList.add("active");
-  if(t==="history") render();
-}
-</script>
 </body>
 </html>
