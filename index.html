@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.5</title>
+    <title>タク計 マスター Ver1.6</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -25,9 +25,35 @@
         nav button { flex: 1; padding: 15px; border: none; background: none; font-size: 0.9rem; color: #666; }
         nav button.active-tab { color: var(--main-blue); font-weight: bold; }
         .delete-btn { color: var(--accent-red); border: 1px solid var(--accent-red); background: none; border-radius: 5px; padding: 2px 5px; font-size: 0.7rem; }
+
+        /* ★自動で消える通知のスタイル */
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 30px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 100px;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 1.5s;
+        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 100px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
+
+    <div id="toast">保存したよ！✅</div>
 
     <div id="input-page" class="tab-content active">
         <div class="card">
@@ -81,13 +107,18 @@
         document.getElementById('work-date').valueAsDate = new Date();
         document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
-        // 歩合計算のルール
         function getRate(sales, isTemp = false) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
             if (sales >= 420000) return 55.0;
-            // 42万未満でも、目安として55%で計算してあげる設定
             return isTemp ? 55.0 : 0;
+        }
+
+        // ★2秒で消える通知を表示する関数
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2000);
         }
 
         function calc() {
@@ -95,7 +126,7 @@
             const res = document.getElementById('resArea');
             if (!s) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            let r = getRate(s, true); // 入力時は目安(55%)を表示
+            let r = getRate(s, true);
             document.getElementById('rate-label').innerText = s < 420000 ? "暫定歩合" : "確定歩合";
             document.getElementById('rate').innerText = r;
             document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
@@ -109,7 +140,10 @@
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             history.push(data);
             localStorage.setItem('taxi_history', JSON.stringify(history));
-            alert('保存したよ！');
+            
+            // alertの代わりにトーストを表示！
+            showToast();
+            
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
         }
@@ -121,7 +155,6 @@
             const head = document.getElementById('list-head');
             const now = new Date();
             let totalS = 0, totalI = 0;
-
             const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
             if (mode === 'month') {
@@ -129,21 +162,16 @@
                 head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th></th></tr>';
                 const thisMonth = history.filter(d => d.date.startsWith(currentMonthStr));
                 thisMonth.forEach(d => totalS += d.sales);
-                
-                // 42万未満でも55%で計算して「やる気」を出す！
                 let monthlyRate = getRate(totalS, true);
                 totalI = Math.floor(totalS * (monthlyRate / 100));
-                
                 document.getElementById('total-rate-badge').innerText = totalS < 420000 ? `暫定歩合: ${monthlyRate}%` : `確定歩合: ${monthlyRate}%`;
                 document.getElementById('total-rate-badge').style.background = totalS < 420000 ? "#666" : "#28a745";
-                
                 thisMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
                 list.innerHTML = thisMonth.map(d => {
                     const shortD = d.date.substring(5).replace('-', '/');
                     return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
                 }).join('');
             } else {
-                // 年間集計も同様
                 document.getElementById('total-label').innerText = '今年の推定手取り合計';
                 head.innerHTML = '<tr><th style="text-align:left;">月</th><th>売上</th><th>手取り</th></tr>';
                 const yearData = {};
