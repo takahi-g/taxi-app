@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.2</title>
+    <title>タク計 マスター Ver1.3</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -35,7 +35,7 @@
             <input type="date" id="work-date">
             <input type="number" id="sales" placeholder="税抜売上" oninput="calc()">
             <div id="resArea" class="result" style="display:none;">
-                <div style="font-size:0.8rem;">歩合率: <span id="rate">--</span>%</div>
+                <div style="font-size:0.8rem;">（参考）この日の歩合: <span id="rate">--</span>%</div>
                 <div class="income"><span id="income">0</span><small>円</small></div>
                 <button class="btn-save" onclick="saveData()">データを保存</button>
             </div>
@@ -59,8 +59,9 @@
         </div>
         <div class="total-box">
             <div id="total-label" style="font-size:0.8rem; opacity:0.8;">集計中...</div>
+            <div id="total-rate-badge" style="display:inline-block; background:var(--sub-green); padding:2px 8px; border-radius:5px; font-size:0.7rem; margin-bottom:5px;">歩合: --%</div>
             <div style="font-size:1.8rem; font-weight:bold;" id="total-income">0円</div>
-            <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">総売上: <span id="total-sales">0</span>円</div>
+            <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">月間総売上: <span id="total-sales">0</span>円</div>
         </div>
         <div class="card" style="padding:10px;">
             <h1 id="list-title">データ一覧</h1>
@@ -78,34 +79,35 @@
 
     <script>
         document.getElementById('work-date').valueAsDate = new Date();
-        
-        // ★日付を選んだ瞬間にカレンダーを閉じる設定！
-        document.getElementById('work-date').addEventListener('change', function() {
-            this.blur();
-        });
+        document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
-        let currentRate = 0, currentIncome = 0;
+        // 歩合率計算の共通ルール
+        function getRate(sales) {
+            if (sales >= 550000) return 60.8;
+            if (sales >= 470000) return 57.9;
+            if (sales >= 420000) return 55.0;
+            return 0;
+        }
 
         function calc() {
             const s = parseFloat(document.getElementById('sales').value);
             const res = document.getElementById('resArea');
             if (!s) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            let r = s >= 550000 ? 60.8 : s >= 470000 ? 57.9 : s >= 420000 ? 55.0 : 0;
-            currentRate = r; currentIncome = Math.floor(s * (r / 100));
+            let r = getRate(s); // 入力時はその日の売上での参考
             document.getElementById('rate').innerText = r;
-            document.getElementById('income').innerText = currentIncome.toLocaleString();
+            document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
         }
 
         function saveData() {
             const s = parseFloat(document.getElementById('sales').value);
             const dInput = document.getElementById('work-date').value;
-            if(!dInput || !s) return alert('売上を入力してね');
-            const data = { id: Date.now(), date: dInput, sales: s, rate: currentRate, income: currentIncome };
+            if(!dInput || !s) return alert('入力してね');
+            const data = { id: Date.now(), date: dInput, sales: s };
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             history.push(data);
             localStorage.setItem('taxi_history', JSON.stringify(history));
-            alert('保存したよ！');
+            alert('保存完了！');
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
         }
@@ -119,15 +121,23 @@
             let totalS = 0, totalI = 0;
 
             if (mode === 'month') {
-                document.getElementById('total-label').innerText = '今月の推定手取り合計';
-                head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th>手取り</th><th></th></tr>';
+                document.getElementById('total-label').innerText = '今月の推定手取り（月間合計で計算）';
+                head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th></th></tr>';
                 const mStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
                 const thisMonth = history.filter(d => d.date.startsWith(mStr));
+                
+                // まず月間合計を出す
+                thisMonth.forEach(d => totalS += d.sales);
+                // 月間合計から歩合率を決定
+                let monthlyRate = getRate(totalS);
+                totalI = Math.floor(totalS * (monthlyRate / 100));
+                
+                document.getElementById('total-rate-badge').innerText = `歩合: ${monthlyRate}%`;
+                
                 thisMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
                 list.innerHTML = thisMonth.map(d => {
-                    totalS += d.sales; totalI += d.income;
                     const shortD = d.date.substring(5).replace('-', '/');
-                    return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td>${d.income.toLocaleString()}</td><td><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
+                    return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
                 }).join('');
             } else {
                 document.getElementById('total-label').innerText = '今年の推定手取り合計';
@@ -135,14 +145,18 @@
                 const yearData = {};
                 history.filter(d => d.date.startsWith(now.getFullYear())).forEach(d => {
                     const m = d.date.substring(0, 7);
-                    if(!yearData[m]) yearData[m] = { s: 0, i: 0 };
-                    yearData[m].s += d.sales; yearData[m].i += d.income;
+                    if(!yearData[m]) yearData[m] = { s: 0 };
+                    yearData[m].s += d.sales;
                 });
+                
                 const sortedMonths = Object.keys(yearData).sort().reverse();
                 list.innerHTML = sortedMonths.map(m => {
-                    totalS += yearData[m].s; totalI += yearData[m].i;
-                    return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${yearData[m].i.toLocaleString()}</td></tr>`;
+                    let mRate = getRate(yearData[m].s);
+                    let mIncome = Math.floor(yearData[m].s * (mRate / 100));
+                    totalS += yearData[m].s; totalI += mIncome;
+                    return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${mIncome.toLocaleString()}</td></tr>`;
                 }).join('');
+                document.getElementById('total-rate-badge').innerText = `年間合計表示中`;
             }
             document.getElementById('total-sales').innerText = totalS.toLocaleString();
             document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
