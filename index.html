@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.6</title>
+    <title>タク計 マスター Ver1.7</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -24,29 +24,10 @@
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; padding-bottom: env(safe-area-inset-bottom); }
         nav button { flex: 1; padding: 15px; border: none; background: none; font-size: 0.9rem; color: #666; }
         nav button.active-tab { color: var(--main-blue); font-weight: bold; }
-        .delete-btn { color: var(--accent-red); border: 1px solid var(--accent-red); background: none; border-radius: 5px; padding: 2px 5px; font-size: 0.7rem; }
-
-        /* ★自動で消える通知のスタイル */
-        #toast {
-            visibility: hidden;
-            min-width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 30px;
-            padding: 16px;
-            position: fixed;
-            z-index: 1000;
-            left: 50%;
-            bottom: 100px;
-            transform: translateX(-50%);
-            font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        #toast.show {
-            visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 1.5s;
-        }
+        .delete-btn { color: var(--accent-red); border: 1px solid var(--accent-red); background: none; border-radius: 5px; padding: 2px 5px; font-size: 0.7rem; margin-left: 5px; }
+        .edit-btn { color: var(--main-blue); border: 1px solid var(--main-blue); background: none; border-radius: 5px; padding: 2px 5px; font-size: 0.7rem; }
+        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 30px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 100px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
@@ -77,17 +58,20 @@
 
     <div id="history-page" class="tab-content">
         <div class="card">
-            <h1>📅 表示切替</h1>
-            <select id="view-mode" onchange="updateHistory()">
-                <option value="month">今月の詳細</option>
-                <option value="year">今年の月別合計</option>
-            </select>
+            <h1>📅 表示設定</h1>
+            <div style="display: flex; gap: 10px;">
+                <select id="view-year" onchange="updateHistory()" style="flex:1;"></select>
+                <select id="view-mode" onchange="updateHistory()" style="flex:1;">
+                    <option value="month">今月の詳細</option>
+                    <option value="year">今年の月別</option>
+                </select>
+            </div>
         </div>
         <div class="total-box">
             <div id="total-label" style="font-size:0.8rem; opacity:0.8;">集計中...</div>
             <div id="total-rate-badge" style="display:inline-block; background:var(--sub-green); padding:2px 8px; border-radius:5px; font-size:0.7rem; margin-bottom:5px;">歩合: --%</div>
             <div style="font-size:1.8rem; font-weight:bold;" id="total-income">0円</div>
-            <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">月間総売上: <span id="total-sales">0</span>円</div>
+            <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">期間総売上: <span id="total-sales">0</span>円</div>
         </div>
         <div class="card" style="padding:10px;">
             <h1 id="list-title">データ一覧</h1>
@@ -107,6 +91,16 @@
         document.getElementById('work-date').valueAsDate = new Date();
         document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
+        // 年の選択肢を自動生成 (2024年から来年まで)
+        const yearSelect = document.getElementById('view-year');
+        const thisYear = new Date().getFullYear();
+        for (let y = thisYear + 1; y >= 2024; y--) {
+            let opt = document.createElement('option');
+            opt.value = y; opt.text = y + "年";
+            if (y === thisYear) opt.selected = true;
+            yearSelect.appendChild(opt);
+        }
+
         function getRate(sales, isTemp = false) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
@@ -114,7 +108,6 @@
             return isTemp ? 55.0 : 0;
         }
 
-        // ★2秒で消える通知を表示する関数
         function showToast() {
             const toast = document.getElementById("toast");
             toast.className = "show";
@@ -135,15 +128,12 @@
         function saveData() {
             const s = parseFloat(document.getElementById('sales').value);
             const dInput = document.getElementById('work-date').value;
-            if(!dInput || !s) return alert('売上を入れてね');
+            if(!dInput || !s) return alert('入力してね');
             const data = { id: Date.now(), date: dInput, sales: s };
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             history.push(data);
             localStorage.setItem('taxi_history', JSON.stringify(history));
-            
-            // alertの代わりにトーストを表示！
             showToast();
-            
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
         }
@@ -151,51 +141,68 @@
         function updateHistory() {
             const history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             const mode = document.getElementById('view-mode').value;
+            const selYear = document.getElementById('view-year').value;
             const list = document.getElementById('history-list');
             const head = document.getElementById('list-head');
             const now = new Date();
             let totalS = 0, totalI = 0;
-            const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
             if (mode === 'month') {
-                document.getElementById('total-label').innerText = '今月の推定手取り（累計で計算）';
-                head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th></th></tr>';
-                const thisMonth = history.filter(d => d.date.startsWith(currentMonthStr));
-                thisMonth.forEach(d => totalS += d.sales);
-                let monthlyRate = getRate(totalS, true);
-                totalI = Math.floor(totalS * (monthlyRate / 100));
-                document.getElementById('total-rate-badge').innerText = totalS < 420000 ? `暫定歩合: ${monthlyRate}%` : `確定歩合: ${monthlyRate}%`;
-                document.getElementById('total-rate-badge').style.background = totalS < 420000 ? "#666" : "#28a745";
-                thisMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
-                list.innerHTML = thisMonth.map(d => {
+                const selMonth = (parseInt(selYear) === now.getFullYear()) ? (now.getMonth() + 1) : 12; // 過去年なら12月を表示
+                const targetMonthStr = selYear + '-' + String(selMonth).padStart(2, '0');
+                
+                document.getElementById('total-label').innerText = selYear + '年' + selMonth + '月の推定手取り';
+                head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th>操作</th></tr>';
+                
+                const filtered = history.filter(d => d.date.startsWith(targetMonthStr));
+                filtered.forEach(d => totalS += d.sales);
+                let r = getRate(totalS, true);
+                totalI = Math.floor(totalS * (r / 100));
+                document.getElementById('total-rate-badge').innerText = totalS < 420000 ? `暫定歩合: ${r}%` : `確定歩合: ${r}%`;
+                
+                filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+                list.innerHTML = filtered.map(d => {
                     const shortD = d.date.substring(5).replace('-', '/');
-                    return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
+                    return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td><button class="edit-btn" onclick="editItem(${d.id})">改</button><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
                 }).join('');
             } else {
-                document.getElementById('total-label').innerText = '今年の推定手取り合計';
+                document.getElementById('total-label').innerText = selYear + '年の合計';
                 head.innerHTML = '<tr><th style="text-align:left;">月</th><th>売上</th><th>手取り</th></tr>';
                 const yearData = {};
-                history.filter(d => d.date.startsWith(now.getFullYear())).forEach(d => {
+                history.filter(d => d.date.startsWith(selYear)).forEach(d => {
                     const m = d.date.substring(0, 7);
                     if(!yearData[m]) yearData[m] = { s: 0 };
                     yearData[m].s += d.sales;
                 });
                 const sortedMonths = Object.keys(yearData).sort().reverse();
                 list.innerHTML = sortedMonths.map(m => {
-                    let mRate = getRate(yearData[m].s, true);
-                    let mIncome = Math.floor(yearData[m].s * (mRate / 100));
-                    totalS += yearData[m].s; totalI += mIncome;
-                    return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${mIncome.toLocaleString()}</td></tr>`;
+                    let r = getRate(yearData[m].s, true);
+                    let inc = Math.floor(yearData[m].s * (r / 100));
+                    totalS += yearData[m].s; totalI += inc;
+                    return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${inc.toLocaleString()}</td></tr>`;
                 }).join('');
-                document.getElementById('total-rate-badge').innerText = `年間合計を表示中`;
-                document.getElementById('total-rate-badge').style.background = "#0054a6";
+                document.getElementById('total-rate-badge').innerText = `年間集計表示中`;
             }
             document.getElementById('total-sales').innerText = totalS.toLocaleString();
             document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
         }
 
+        // ★売上を直接編集する機能
+        function editItem(id) {
+            let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
+            const item = history.find(d => d.id === id);
+            if (!item) return;
+            const newSales = prompt(`${item.date} の売上を修正（税抜）`, item.sales);
+            if (newSales !== null && !isNaN(newSales)) {
+                item.sales = parseFloat(newSales);
+                localStorage.setItem('taxi_history', JSON.stringify(history));
+                updateHistory();
+                showToast();
+            }
+        }
+
         function deleteItem(id) {
-            if(!confirm('データを消すよ？')) return;
+            if(!confirm('本当に消していい？')) return;
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             localStorage.setItem('taxi_history', JSON.stringify(history.filter(item => item.id !== id)));
             updateHistory();
