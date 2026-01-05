@@ -8,30 +8,35 @@
     <meta name="apple-mobile-web-app-title" content="タク計">
     <title>タク計</title>
 
-    <link rel="apple-touch-icon" href="https://r2.community.sre.google/files/f-1d860d5e-e41a-4528-910a-e3740e698888">
+    <link rel="apple-touch-icon" href="https://r2.community.sre.google/files/f-f32f877d-771c-4389-9943-26279f888888">
 
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #333333; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; }
+        
         .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; }
         .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
+        
         .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 20px; text-align: left; margin-bottom: 20px; }
         .badge { background: var(--ios-green); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 8px; }
         .total-val { font-size: 2.4rem; font-weight: 800; }
+
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
+        h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; display: flex; align-items: center; gap: 5px; }
+
         .hist-table { width: 100%; border-collapse: collapse; }
         .hist-table th { text-align: left; color: #8e8e93; font-size: 0.85rem; padding-bottom: 10px; border-bottom: 1px solid #f2f2f7; }
         .hist-table td { padding: 15px 0; border-bottom: 1px solid #f2f2f7; }
         .hist-btns { display: flex; gap: 10px; justify-content: flex-end; }
         .btn-pencil { background: var(--pencil-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
         .btn-trash { background: var(--trash-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; }
+
+        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 100; }
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; }
         .active-tab { display: block; }
-        input[type="date"], input[type="number"], select { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; width: 100%; box-sizing: border-box; }
+        input[type="date"], input[type="number"], select { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; width: 100%; box-sizing: border-box; background: #fff; }
     </style>
 </head>
 <body>
@@ -67,7 +72,7 @@
         <div style="font-size:0.9rem; opacity:0.7; margin-top:5px;">期間総売上: <span id="hist-total-sales">0</span>円</div>
     </div>
     <div class="card">
-        <h2 style="color:#1c1c1e">履歴</h2>
+        <h2>履歴</h2>
         <table class="hist-table">
             <thead><tr><th>日付</th><th>売上</th><th style="text-align:right;">操作</th></tr></thead>
             <tbody id="history-list"></tbody>
@@ -80,19 +85,19 @@
         <h2>⚙️ 設定</h2>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f2f2f7;">
             <span>目標売上 (税抜)</span>
-            <input type="number" id="set-goal" oninput="saveSettings()" style="width:120px; text-align:right;">
+            <input type="number" id="set-goal" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-weight:bold; color:var(--ios-blue);">
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0;">
             <span>全出勤日数</span>
-            <input type="number" id="set-days" oninput="saveSettings()" style="width:120px; text-align:right;">
+            <input type="number" id="set-days" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-weight:bold; color:var(--ios-blue);">
         </div>
     </div>
 </div>
 
 <nav>
-    <button onclick="showPage('input')" id="nav-input" class="active"><span>💰 入力</span></button>
-    <button onclick="showPage('history')" id="nav-history"><span>📅 履歴</span></button>
-    <button onclick="showPage('settings')" id="nav-settings"><span>⚙️ 設定</span></button>
+    <button onclick="showPage('input')" id="nav-input" class="active">💰<span>入力</span></button>
+    <button onclick="showPage('history')" id="nav-history">📅<span>履歴</span></button>
+    <button onclick="showPage('settings')" id="nav-settings">⚙️<span>設定</span></button>
 </nav>
 
 <script>
@@ -107,7 +112,7 @@
 
     function refresh() {
         const history = DB.load('taxi_v11_hist', []);
-        const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
+        const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 13 });
         const selectedDate = document.getElementById('work-date').value;
         const curMonth = selectedDate.substring(0, 7);
         const monthlyData = history.filter(h => h.date.startsWith(curMonth));
@@ -140,7 +145,7 @@
                     <button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button>
                 </td>
             </tr>
-        `).join('') || '<tr><td colspan="3" style="text-align:center;">なし</td></tr>';
+        `).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;">履歴なし</td></tr>';
     }
 
     function updatePreview() {
@@ -165,7 +170,7 @@
 
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
     function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
-    function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
+    function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||13 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); refresh(); }
 
     document.getElementById('work-date').valueAsDate = new Date();
@@ -174,7 +179,7 @@
     const now = new Date();
     for(let y=2026; y>=2024; y--) { let o = document.createElement('option'); o.value=y; o.text=y+'年'; yr.add(o); }
     for(let m=1; m<=12; m++) { let o = document.createElement('option'); o.value=String(m).padStart(2,'0'); o.text=m+'月'; if(m === now.getMonth()+1) o.selected = true; mt.add(o); }
-    const s = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
+    const s = DB.load('taxi_v11_sets', { goal: 550000, days: 13 });
     document.getElementById('set-goal').value = s.goal; document.getElementById('set-days').value = s.days;
     refresh();
 </script>
