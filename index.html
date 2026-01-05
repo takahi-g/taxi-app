@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver2.5</title>
+    <title>タク計 マスター Ver2.6</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -11,6 +11,9 @@
             --ios-blue: #007AFF; 
             --ios-red: #ff3b30; 
             --sub-green: #28a745; 
+            /* 薄めの色設定 */
+            --soft-blue: #e7f2ff;
+            --soft-red: #fff1f0;
         }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
         
@@ -31,18 +34,29 @@
             -webkit-appearance: none;
         }
         input[type="date"] { 
-            font-size: 1.1rem; 
-            min-height: 48px;
+            font-size: 1.2rem; 
+            min-height: 50px;
             background-color: #fff;
             text-align: center;
+            font-weight: bold;
         }
         
+        /* ★税抜売上入力のラベルと入力欄をデカく！ */
+        .sales-label {
+            font-size: 1.3rem; 
+            font-weight: 900; 
+            color: #444; 
+            text-align: center; 
+            margin-bottom: 8px;
+            display: block;
+        }
         input[type="number"] { 
-            font-size: 2.2rem; 
+            font-size: 2.8rem; 
             text-align: center; 
             font-weight: bold; 
             color: var(--ios-blue);
-            padding: 15px;
+            padding: 20px;
+            border: 3px solid #eef2f7;
         }
         input[type="number"]::placeholder { text-align: center; font-size: 1.5rem; color: #ccc; }
 
@@ -53,30 +67,30 @@
         td { border-bottom: 1px solid #eee; padding: 12px 4px; text-align: right; }
         .td-date { text-align: left; font-size: 0.95rem; color: #444; }
 
-        /* ★Ver2.5 ボタンデザイン変更点 */
+        /* ★ボタン背景を半分くらい薄く調整 */
         .btn-group { display: flex; gap: 12px; justify-content: flex-end; }
         .action-btn { 
-            width: 44px; 
-            height: 44px; 
-            border-radius: 10px; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 14px; 
             border: none; 
-            font-size: 1.2rem; 
+            font-size: 1.5rem; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        /* 編集：Appleブルー背景に白鉛筆 */
-        .edit-btn { background: var(--ios-blue); color: white; }
-        /* 削除：iOSレッド背景に白ゴミ箱 */
-        .delete-btn { background: var(--ios-red); color: white; }
+        /* 編集：薄い青に青い鉛筆 */
+        .edit-btn { background: var(--soft-blue); color: var(--ios-blue); }
+        /* 削除：薄い赤に赤いゴミ箱 */
+        .delete-btn { background: var(--soft-red); color: var(--ios-red); }
 
-        .result { background: #eef6ff; padding: 12px; border-radius: 12px; text-align: center; margin-top: 10px; }
-        .income { font-size: 2.2rem; font-weight: bold; color: var(--ios-red); margin: 2px 0; }
-        .btn-save { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; }
+        .result { background: #fdfdfd; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 2px solid #eef6ff; }
+        .income { font-size: 2.5rem; font-weight: bold; color: var(--ios-red); margin: 5px 0; }
+        .btn-save { width: 100%; padding: 18px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 1.3rem; margin-top: 10px; }
 
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; padding-bottom: env(safe-area-inset-bottom); height: 65px; }
-        nav button { flex: 1; border: none; background: none; font-size: 0.95rem; color: #666; }
+        nav button { flex: 1; border: none; background: none; font-size: 1rem; color: #666; }
         nav button.active-tab { color: var(--ios-blue); font-weight: bold; }
         
         .tab-content { display: none; }
@@ -99,14 +113,14 @@
             <div id="monthly-sum-info" class="total-badge">読み込み中...</div>
             <div style="padding: 2px;">
                 <input type="date" id="work-date" onchange="updateMonthlySum()">
-                <div style="font-size: 0.8rem; color: #888; text-align: center; margin-bottom: 5px;">税抜売上入力</div>
+                <span class="sales-label">税抜売上入力</span>
                 <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
             </div>
             
             <div id="resArea" class="result" style="display:none;">
-                <div style="font-size:0.9rem;"><span id="rate-label">歩合</span>: <span id="rate" style="font-weight:bold;">--</span>%</div>
+                <div style="font-size:1rem;"><span id="rate-label">歩合</span>: <span id="rate" style="font-weight:bold;">--</span>%</div>
                 <div class="income"><span id="income">0</span><small>円</small></div>
-                <button class="btn-save" onclick="saveData()">この内容で保存</button>
+                <button class="btn-save" onclick="saveData()">この内容で保存する</button>
             </div>
         </div>
         <div class="card">
