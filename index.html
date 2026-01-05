@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver5.0</title>
+    <title>タク計 マスター Ver5.1</title>
     <link rel="apple-touch-icon" href="https://r.jina.ai/i/6f9064c5770146059d044f60f64c6328">
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
@@ -29,8 +29,6 @@
         .total-box { background: #333; color: white; padding: 18px; border-radius: 16px; margin-bottom: 15px; }
         #toast { visibility: hidden; min-width: 200px; background-color: rgba(0,0,0,0.85); color: #fff; text-align: center; border-radius: 50px; padding: 15px; position: fixed; z-index: 1000; left: 50%; bottom: 100px; transform: translateX(-50%); }
         #toast.show { visibility: visible; animation: fadein 0.4s, fadeout 0.4s 1.6s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 100px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
@@ -44,7 +42,7 @@
         <div class="card">
             <div id="today-sum-info" class="total-badge">今日の合計: 0円 (税抜)</div>
             <div class="input-group">
-                <input type="date" id="work-date" onchange="updateUI()">
+                <input type="date" id="work-date" onblur="updateUI()" onchange="updateUI()">
             </div>
             <div class="input-with-unit">
                 <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
@@ -127,6 +125,7 @@
         function updateUI() {
             const history = storage.get('taxi_history', []);
             const dInput = document.getElementById('work-date').value;
+            if (!dInput) return;
             const targetMonth = dInput.substring(0, 7);
             const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12 });
 
@@ -142,7 +141,9 @@
             const dailyTarget = Math.ceil(remainingMonthGoal / remainingDays);
             const todayRemaining = dailyTarget - todaySales;
 
-            document.getElementById('remain-days').value = remainingDays;
+            const rDays = document.getElementById('remain-days');
+            if (rDays) rDays.value = remainingDays;
+            
             const targetDisplay = document.getElementById('target-remaining');
             if (todayRemaining <= 0) {
                 targetDisplay.innerText = `目標達成！ (+${Math.abs(todayRemaining).toLocaleString()}円)`;
@@ -167,12 +168,13 @@
 
         function calc() {
             const sGross = parseFloat(document.getElementById('sales').value) || 0;
-            const res = document.getElementById('resArea');
-            if (!sGross) { res.style.display = 'none'; return; }
-            res.style.display = 'block';
+            const resArea = document.getElementById('resArea');
+            if (!sGross) { resArea.style.display = 'none'; return; }
+            resArea.style.display = 'block';
             const sNet = Math.floor(sGross / 1.1);
             const history = storage.get('taxi_history', []);
-            const targetMonth = document.getElementById('work-date').value.substring(0, 7);
+            const dInput = document.getElementById('work-date').value;
+            const targetMonth = dInput ? dInput.substring(0, 7) : "";
             const monthlyTotal = history.filter(d => d.date.startsWith(targetMonth)).reduce((sum, item) => sum + item.sales, 0);
             const r = getRate(monthlyTotal + sNet);
             document.getElementById('income').innerText = Math.floor(sNet * (r / 100)).toLocaleString();
@@ -181,7 +183,7 @@
         function saveData() {
             const sGross = parseFloat(document.getElementById('sales').value);
             const dInput = document.getElementById('work-date').value;
-            if(!sGross) return;
+            if(!sGross || !dInput) return;
             const sNet = Math.floor(sGross / 1.1);
             let history = storage.get('taxi_history', []);
             let todayData = history.find(d => d.date === dInput);
