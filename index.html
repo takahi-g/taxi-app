@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver3.9</title>
+    <title>タク計 マスター Ver4.0</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
@@ -19,11 +19,10 @@
         
         .unit-text { position: absolute; right: 15px; font-weight: bold; color: #888; font-size: 1.2rem; pointer-events: none; }
 
-        /* 入力画面トップの目標ボックス */
         .target-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
         .norm-card { background: #eef6ff; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 1px solid #d0e3ff; }
 
-        .total-badge { font-size: 0.9rem; background: #333; padding: 8px 15px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: white; font-weight: bold; width: 100%; box-sizing: border-box; }
+        .total-badge { font-size: 0.9rem; background: #333; padding: 10px 15px; border-radius: 12px; margin-bottom: 15px; display: block; color: white; font-weight: bold; text-align: center; }
         .result { background: #fdfdfd; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 2px solid #eef6ff; }
         .btn-save { width: 100%; min-height: 60px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 1.4rem; margin-top: 10px; }
         
@@ -45,12 +44,11 @@
 
     <div id="input-page" class="tab-content active">
         <div class="target-box" id="target-display">
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 5px;" id="target-label">今日の残りノルマ (税抜)</div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 5px;">今日の残りノルマ (税抜)</div>
             <div style="font-size: 2.2rem; font-weight: bold;" id="target-remaining">--- 円</div>
         </div>
 
         <div class="card">
-            <h1>💰 今日の入力</h1>
             <div id="today-sum-info" class="total-badge">今日の合計: 0円 (税抜)</div>
             
             <div class="input-group">
@@ -125,10 +123,7 @@
                 </div>
                 <div style="font-size: 0.85rem; color: #666;">1日あたりの平均ノルマ (税抜)</div>
                 <div style="font-size: 2.2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
-                    出勤進捗：<span id="disp-now-count">0</span> / <span id="disp-total-days">0</span> 回目
-                </div>
-                <div style="font-size: 0.7rem; color: #999; margin-top: 3px;" id="last-update-info"></div>
+                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;" id="last-update-info"></div>
             </div>
         </div>
     </div>
@@ -148,26 +143,19 @@
             set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
         };
 
-        // 自動更新ロジック (朝7時)
         function autoUpdateDays() {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const currentHour = now.getHours();
             let settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12, lastUpdateDate: "", lastWorkDate: "" });
             
-            // NaNガード
-            if (isNaN(settings.remainDays)) settings.remainDays = settings.totalDays || 0;
-
             if (currentHour >= 7 && settings.lastUpdateDate !== todayStr && settings.lastWorkDate !== "" && settings.lastWorkDate < todayStr) {
                 if (settings.remainDays > 0) {
                     settings.remainDays -= 1;
                     settings.lastUpdateDate = todayStr;
                     storage.set('taxi_settings', settings);
-                    if(document.getElementById('remain-days')) document.getElementById('remain-days').value = settings.remainDays;
                 }
             }
-            const infoEl = document.getElementById('last-update-info');
-            if(infoEl) infoEl.innerText = "最終自動更新: " + (settings.lastUpdateDate || "なし");
         }
 
         function getRate(sales) {
@@ -192,34 +180,31 @@
             const targetMonth = dInput.substring(0, 7);
             const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
 
-            // 今月の累計（今日より前の分）
             const pastSalesInMonth = history.filter(d => d.date.startsWith(targetMonth) && d.date !== dInput).reduce((sum, item) => sum + item.sales, 0);
-            // 今日の累計
             const todaySales = history.find(d => d.date === dInput)?.sales || 0;
             
-            // 残りの月間目標
-            const remainingGoalAmount = Math.max(0, settings.goal - pastSalesInMonth);
-            // 1日あたりのノルマ計算
-            const rd = settings.remainDays > 0 ? settings.remainDays : 1;
-            const dailyNorm = Math.ceil(remainingGoalAmount / rd);
+            const remainingMonthGoal = Math.max(0, settings.goal - pastSalesInMonth);
+            const rd = (parseFloat(settings.remainDays) || 0) > 0 ? parseFloat(settings.remainDays) : 1;
+            
+            // 今日の1日分ノルマ = 今月の残り合計 ÷ 残り日数
+            const dailyNorm = Math.ceil(remainingMonthGoal / rd);
+            // 今日の「残り」ノルマ = 今日の1日分ノルマ - 今日の累計
+            const todayRemainingNorm = dailyNorm - todaySales;
 
-            // 表示更新（設定画面）
-            document.getElementById('calc-remain-goal').innerText = Math.floor(remainingGoalAmount).toLocaleString() + "円";
+            // 設定画面
+            document.getElementById('calc-remain-goal').innerText = Math.floor(remainingMonthGoal).toLocaleString() + "円";
             document.getElementById('calc-daily-norm').innerText = (isNaN(dailyNorm) ? 0 : dailyNorm).toLocaleString() + "円";
-            document.getElementById('disp-total-days').innerText = settings.totalDays || 0;
-            const nowCount = (settings.totalDays - settings.remainDays + 1);
-            document.getElementById('disp-now-count').innerText = isNaN(nowCount) ? 0 : (nowCount > settings.totalDays ? settings.totalDays : nowCount);
+            document.getElementById('last-update-info').innerText = "進捗: " + (settings.totalDays - settings.remainDays + 1) + " / " + settings.totalDays + " 回目";
 
-            // 表示更新（入力画面）
+            // 入力画面
             document.getElementById('today-sum-info').innerText = `今日の合計: ${Math.floor(todaySales).toLocaleString()}円 (税抜)`;
             
-            const diff = dailyNorm - todaySales;
             const targetDisplay = document.getElementById('target-remaining');
-            if (diff <= 0) {
-                targetDisplay.innerText = `目標達成！ (+${Math.abs(diff).toLocaleString()}円)`;
+            if (todayRemainingNorm <= 0) {
+                targetDisplay.innerText = `目標達成！ (+${Math.abs(todayRemainingNorm).toLocaleString()}円)`;
                 document.getElementById('target-display').style.background = "var(--sub-green)";
             } else {
-                targetDisplay.innerText = (isNaN(diff) ? 0 : diff).toLocaleString() + " 円";
+                targetDisplay.innerText = (isNaN(todayRemainingNorm) ? 0 : todayRemainingNorm).toLocaleString() + " 円";
                 document.getElementById('target-display').style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
             }
         }
