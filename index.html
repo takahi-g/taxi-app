@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.4</title>
+    <title>タク計 マスター Ver1.5</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -35,7 +35,7 @@
             <input type="date" id="work-date">
             <input type="number" id="sales" placeholder="税抜売上" oninput="calc()">
             <div id="resArea" class="result" style="display:none;">
-                <div style="font-size:0.8rem;">（参考）この日の歩合: <span id="rate">--</span>%</div>
+                <div style="font-size:0.8rem;"><span id="rate-label">歩合</span>: <span id="rate">--</span>%</div>
                 <div class="income"><span id="income">0</span><small>円</small></div>
                 <button class="btn-save" onclick="saveData()">データを保存</button>
             </div>
@@ -81,11 +81,13 @@
         document.getElementById('work-date').valueAsDate = new Date();
         document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
-        function getRate(sales) {
+        // 歩合計算のルール
+        function getRate(sales, isTemp = false) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
             if (sales >= 420000) return 55.0;
-            return 0;
+            // 42万未満でも、目安として55%で計算してあげる設定
+            return isTemp ? 55.0 : 0;
         }
 
         function calc() {
@@ -93,7 +95,8 @@
             const res = document.getElementById('resArea');
             if (!s) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            let r = getRate(s);
+            let r = getRate(s, true); // 入力時は目安(55%)を表示
+            document.getElementById('rate-label').innerText = s < 420000 ? "暫定歩合" : "確定歩合";
             document.getElementById('rate').innerText = r;
             document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
         }
@@ -101,12 +104,12 @@
         function saveData() {
             const s = parseFloat(document.getElementById('sales').value);
             const dInput = document.getElementById('work-date').value;
-            if(!dInput || !s) return alert('入力してね');
+            if(!dInput || !s) return alert('売上を入れてね');
             const data = { id: Date.now(), date: dInput, sales: s };
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             history.push(data);
             localStorage.setItem('taxi_history', JSON.stringify(history));
-            alert('保存完了！');
+            alert('保存したよ！');
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
         }
@@ -119,24 +122,20 @@
             const now = new Date();
             let totalS = 0, totalI = 0;
 
-            // 「今月」の文字列を確実に作る (例: "2026-01")
             const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
             if (mode === 'month') {
-                document.getElementById('total-label').innerText = '今月の推定手取り（月計で計算）';
+                document.getElementById('total-label').innerText = '今月の推定手取り（累計で計算）';
                 head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th></th></tr>';
-                
-                // 今月のデータだけを抜き出す
                 const thisMonth = history.filter(d => d.date.startsWith(currentMonthStr));
-                
-                // 売上を合計
                 thisMonth.forEach(d => totalS += d.sales);
                 
-                // 合計売上から歩合と手取りを計算
-                let monthlyRate = getRate(totalS);
+                // 42万未満でも55%で計算して「やる気」を出す！
+                let monthlyRate = getRate(totalS, true);
                 totalI = Math.floor(totalS * (monthlyRate / 100));
                 
-                document.getElementById('total-rate-badge').innerText = `歩合: ${monthlyRate}%`;
+                document.getElementById('total-rate-badge').innerText = totalS < 420000 ? `暫定歩合: ${monthlyRate}%` : `確定歩合: ${monthlyRate}%`;
+                document.getElementById('total-rate-badge').style.background = totalS < 420000 ? "#666" : "#28a745";
                 
                 thisMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
                 list.innerHTML = thisMonth.map(d => {
@@ -144,32 +143,31 @@
                     return `<tr><td style="text-align:left;">${shortD}</td><td>${d.sales.toLocaleString()}</td><td><button class="delete-btn" onclick="deleteItem(${d.id})">消</button></td></tr>`;
                 }).join('');
             } else {
+                // 年間集計も同様
                 document.getElementById('total-label').innerText = '今年の推定手取り合計';
                 head.innerHTML = '<tr><th style="text-align:left;">月</th><th>売上</th><th>手取り</th></tr>';
                 const yearData = {};
-                
-                // 今年1年間のデータを月ごとに集計
                 history.filter(d => d.date.startsWith(now.getFullYear())).forEach(d => {
                     const m = d.date.substring(0, 7);
                     if(!yearData[m]) yearData[m] = { s: 0 };
                     yearData[m].s += d.sales;
                 });
-                
                 const sortedMonths = Object.keys(yearData).sort().reverse();
                 list.innerHTML = sortedMonths.map(m => {
-                    let mRate = getRate(yearData[m].s);
+                    let mRate = getRate(yearData[m].s, true);
                     let mIncome = Math.floor(yearData[m].s * (mRate / 100));
                     totalS += yearData[m].s; totalI += mIncome;
                     return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${mIncome.toLocaleString()}</td></tr>`;
                 }).join('');
                 document.getElementById('total-rate-badge').innerText = `年間合計を表示中`;
+                document.getElementById('total-rate-badge').style.background = "#0054a6";
             }
             document.getElementById('total-sales').innerText = totalS.toLocaleString();
             document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
         }
 
         function deleteItem(id) {
-            if(!confirm('消すよ？')) return;
+            if(!confirm('データを消すよ？')) return;
             let history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
             localStorage.setItem('taxi_history', JSON.stringify(history.filter(item => item.id !== id)));
             updateHistory();
