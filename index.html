@@ -1,86 +1,331 @@
-function updateHistory() {
-    const history = JSON.parse(localStorage.getItem('taxi_history') || '[]');
-    const mode = document.getElementById('view-mode').value;
-    const selYear = document.getElementById('view-year').value;
-    const selMonth = document.getElementById('view-month').value;
-    const list = document.getElementById('history-list');
-    const head = document.getElementById('list-head');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>タク計 マスター Ver2.6</title>
 
-    let totalS = 0, totalI = 0;
-
-    if (mode === 'month') {
-        let targetYM;
-
-        if (selMonth === 'all') {
-            // 今月
-            const now = new Date();
-            targetYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-        } else {
-            // 指定月
-            targetYM = selYear + '-' + selMonth;
-        }
-
-        document.getElementById('total-label').innerText =
-            targetYM.replace('-', '年') + '月の合計';
-
-        head.innerHTML =
-            '<tr><th style="text-align:left;">日付</th><th>売上</th><th>操作</th></tr>';
-
-        const filtered = history.filter(d => d.date.startsWith(targetYM));
-        filtered.forEach(d => totalS += d.sales);
-
-        const r = getRate(totalS, true);
-        totalI = Math.floor(totalS * (r / 100));
-
-        document.getElementById('total-rate-badge').innerText =
-            totalS < 420000 ? `暫定歩合: ${r}%` : `確定歩合: ${r}%`;
-
-        filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-        list.innerHTML = filtered.map(d => `
-            <tr>
-                <td class="td-date">${d.date.substring(5).replace('-','/')}</td>
-                <td style="font-weight:bold;">${d.sales.toLocaleString()}</td>
-                <td>
-                    <div class="btn-group">
-                        <button class="action-btn edit-btn" onclick="editItem(${d.id})">✏️</button>
-                        <button class="action-btn delete-btn" onclick="deleteItem(${d.id})">🗑️</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } 
-    else {
-        // 年集計（既存そのまま）
-        document.getElementById('total-label').innerText = selYear + '年の合計';
-        head.innerHTML =
-            '<tr><th style="text-align:left;">月</th><th>売上</th><th>手取り</th></tr>';
-
-        const yearData = {};
-        history.filter(d => d.date.startsWith(selYear)).forEach(d => {
-            const m = d.date.substring(0,7);
-            if (!yearData[m]) yearData[m] = 0;
-            yearData[m] += d.sales;
-        });
-
-        const months = Object.keys(yearData).sort().reverse();
-        list.innerHTML = months.map(m => {
-            const r = getRate(yearData[m], true);
-            const inc = Math.floor(yearData[m] * (r / 100));
-            totalS += yearData[m];
-            totalI += inc;
-            return `
-                <tr>
-                    <td class="td-date">${m.substring(5)}月</td>
-                    <td>${yearData[m].toLocaleString()}</td>
-                    <td>${inc.toLocaleString()}</td>
-                </tr>
-            `;
-        }).join('');
-
-        document.getElementById('total-rate-badge').innerText = '年間合計';
-    }
-
-    document.getElementById('total-sales').innerText = totalS.toLocaleString();
-    document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
+<style>
+:root {
+  --ios-blue:#007AFF;
+  --ios-red:#ff3b30;
+  --sub-green:#28a745;
+  --soft-blue:#e7f2ff;
+  --soft-red:#fff1f0;
 }
+body{
+  font-family:-apple-system,sans-serif;
+  background:#f0f4f8;
+  margin:0;
+  padding:12px;
+  padding-bottom:90px;
+}
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  margin-bottom:15px;
+}
+h1{font-size:1rem;color:var(--ios-blue);margin:0 0 10px}
+input,select{
+  width:100%;
+  padding:12px;
+  font-size:1.1rem;
+  border:2px solid #eee;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+input[type=number]{
+  font-size:2.6rem;
+  text-align:center;
+  font-weight:bold;
+  color:var(--ios-blue);
+}
+.sales-label{
+  font-size:1.3rem;
+  font-weight:900;
+  text-align:center;
+  display:block;
+}
+.total-badge{
+  background:#333;
+  color:#fff;
+  padding:5px 12px;
+  border-radius:20px;
+  font-size:.85rem;
+  display:inline-block;
+  margin-bottom:8px;
+}
+.result{
+  border:2px solid #eef6ff;
+  border-radius:12px;
+  padding:15px;
+  text-align:center;
+}
+.income{
+  font-size:2.3rem;
+  font-weight:bold;
+  color:var(--ios-red);
+}
+.btn-save{
+  width:100%;
+  padding:18px;
+  background:var(--ios-blue);
+  color:#fff;
+  border:none;
+  border-radius:15px;
+  font-size:1.2rem;
+  font-weight:bold;
+}
+nav{
+  position:fixed;
+  bottom:0;left:0;
+  width:100%;
+  background:#fff;
+  border-top:1px solid #ddd;
+  display:flex;
+  height:65px;
+}
+nav button{
+  flex:1;
+  border:none;
+  background:none;
+  font-size:1rem;
+  color:#666;
+}
+nav button.active-tab{
+  color:var(--ios-blue);
+  font-weight:bold;
+}
+.tab-content{display:none}
+.active{display:block}
+
+table{width:100%;border-collapse:collapse}
+th{font-size:.8rem;color:#666;border-bottom:2px solid #eee}
+td{padding:12px 4px;border-bottom:1px solid #eee;text-align:right}
+.td-date{text-align:left}
+
+.btn-group{display:flex;gap:10px;justify-content:flex-end}
+.action-btn{
+  width:46px;height:46px;border-radius:14px;
+  border:none;font-size:1.3rem;
+}
+.edit-btn{background:var(--soft-blue);color:var(--ios-blue)}
+.delete-btn{background:var(--soft-red);color:var(--ios-red)}
+
+.total-box{
+  background:#333;color:#fff;
+  padding:18px;border-radius:16px;margin-bottom:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="input-page" class="tab-content active">
+  <div class="card">
+    <h1>💰 売上入力</h1>
+    <div id="monthly-sum-info" class="total-badge">--</div>
+    <input type="date" id="work-date">
+    <span class="sales-label">税抜売上入力</span>
+    <input type="number" id="sales" placeholder="0" oninput="calc()">
+
+    <div id="resArea" class="result" style="display:none">
+      <div><span id="rate-label">歩合</span>：<b><span id="rate">--</span>%</b></div>
+      <div class="income"><span id="income">0</span>円</div>
+      <button class="btn-save" onclick="saveData()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="history-page" class="tab-content">
+  <div class="card">
+    <h1>📅 表示設定</h1>
+    <div style="display:flex;gap:10px">
+      <select id="view-year" onchange="updateHistory()"></select>
+      <select id="view-month" onchange="updateHistory()">
+        <option value="all">今月</option>
+        <option value="01">1月</option><option value="02">2月</option>
+        <option value="03">3月</option><option value="04">4月</option>
+        <option value="05">5月</option><option value="06">6月</option>
+        <option value="07">7月</option><option value="08">8月</option>
+        <option value="09">9月</option><option value="10">10月</option>
+        <option value="11">11月</option><option value="12">12月</option>
+      </select>
+      <select id="view-mode" onchange="updateHistory()">
+        <option value="month">月詳細</option>
+        <option value="year">年集計</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="total-box">
+    <div id="total-label">--</div>
+    <div id="total-rate-badge">--</div>
+    <div style="font-size:2rem;font-weight:bold" id="total-income">0円</div>
+    <div>期間総売上：<span id="total-sales">0</span>円</div>
+  </div>
+
+  <div class="card">
+    <h1>履歴</h1>
+    <table>
+      <thead id="list-head"></thead>
+      <tbody id="history-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<nav>
+  <button class="active-tab" onclick="showPage('input')">入力</button>
+  <button onclick="showPage('history')">履歴</button>
+</nav>
+
+<script>
+const LS_KEY="taxi_history";
+document.getElementById("work-date").valueAsDate=new Date();
+
+const yearSel=document.getElementById("view-year");
+const now=new Date();
+for(let y=now.getFullYear()+1;y>=2024;y--){
+  const o=document.createElement("option");
+  o.value=y;o.text=y+"年";
+  if(y===now.getFullYear())o.selected=true;
+  yearSel.add(o);
+}
+
+function getRate(s){
+  if(s>=550000)return 60.8;
+  if(s>=470000)return 57.9;
+  if(s>=420000)return 55.0;
+  return 55.0;
+}
+
+function load(){return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}
+function save(h){localStorage.setItem(LS_KEY,JSON.stringify(h))}
+
+let monthlyTotal=0;
+
+function updateMonthlySum(){
+  const d=document.getElementById("work-date").value;
+  if(!d)return;
+  const ym=d.substring(0,7);
+  const h=load();
+  monthlyTotal=h.filter(x=>x.date.startsWith(ym)).reduce((s,x)=>s+x.sales,0);
+  document.getElementById("monthly-sum-info").innerText=
+    ym.replace("-","年")+"月 累計："+monthlyTotal.toLocaleString()+"円";
+}
+
+function calc(){
+  const s=Number(document.getElementById("sales").value);
+  if(!s)return document.getElementById("resArea").style.display="none";
+  const total=monthlyTotal+s;
+  const r=getRate(total);
+  document.getElementById("rate").innerText=r;
+  document.getElementById("income").innerText=Math.floor(s*(r/100)).toLocaleString();
+  document.getElementById("resArea").style.display="block";
+}
+
+function saveData(){
+  const s=Number(document.getElementById("sales").value);
+  const d=document.getElementById("work-date").value;
+  if(!s||!d)return;
+  const h=load();
+  h.push({id:Date.now(),date:d,sales:s});
+  save(h);
+  document.getElementById("sales").value="";
+  document.getElementById("resArea").style.display="none";
+  updateMonthlySum();
+}
+
+function updateHistory(){
+  const h=load();
+  const y=document.getElementById("view-year").value;
+  const m=document.getElementById("view-month").value;
+  const mode=document.getElementById("view-mode").value;
+  let totalS=0,totalI=0;
+
+  if(mode==="month"){
+    const ym=(m==="all")
+      ? now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")
+      : y+"-"+m;
+
+    document.getElementById("total-label").innerText=ym.replace("-","年")+"月";
+    document.getElementById("list-head").innerHTML=
+      "<tr><th>日付</th><th>売上</th><th></th></tr>";
+
+    const f=h.filter(x=>x.date.startsWith(ym));
+    f.forEach(x=>totalS+=x.sales);
+    const r=getRate(totalS);
+    totalI=Math.floor(totalS*(r/100));
+    document.getElementById("total-rate-badge").innerText="歩合 "+r+"%";
+
+    document.getElementById("history-list").innerHTML=f.sort((a,b)=>b.id-a.id).map(x=>`
+      <tr>
+        <td class="td-date">${x.date.substring(5).replace("-","/")}</td>
+        <td>${x.sales.toLocaleString()}</td>
+        <td>
+          <div class="btn-group">
+            <button class="action-btn edit-btn" onclick="editItem(${x.id})">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteItem(${x.id})">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }else{
+    document.getElementById("total-label").innerText=y+"年";
+    document.getElementById("list-head").innerHTML=
+      "<tr><th>月</th><th>売上</th><th>手取り</th></tr>";
+
+    const map={};
+    h.filter(x=>x.date.startsWith(y)).forEach(x=>{
+      const k=x.date.substring(0,7);
+      map[k]=(map[k]||0)+x.sales;
+    });
+
+    document.getElementById("history-list").innerHTML=
+      Object.keys(map).sort().reverse().map(k=>{
+        const r=getRate(map[k]);
+        const inc=Math.floor(map[k]*(r/100));
+        totalS+=map[k]; totalI+=inc;
+        return `<tr><td class="td-date">${k.substring(5)}月</td><td>${map[k].toLocaleString()}</td><td>${inc.toLocaleString()}</td></tr>`;
+      }).join("");
+
+    document.getElementById("total-rate-badge").innerText="年間合計";
+  }
+
+  document.getElementById("total-sales").innerText=totalS.toLocaleString();
+  document.getElementById("total-income").innerText=totalI.toLocaleString()+"円";
+}
+
+function editItem(id){
+  const h=load();
+  const i=h.find(x=>x.id===id);
+  if(!i)return;
+  const v=prompt("売上修正",i.sales);
+  if(v!==null&&!isNaN(v)){i.sales=Number(v);save(h);updateHistory();updateMonthlySum();}
+}
+function deleteItem(id){
+  if(!confirm("削除する？"))return;
+  save(load().filter(x=>x.id!==id));
+  updateHistory();updateMonthlySum();
+}
+function showPage(p){
+  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active-tab"));
+  if(p==="input"){
+    document.getElementById("input-page").classList.add("active");
+    document.querySelector("nav button:first-child").classList.add("active-tab");
+    updateMonthlySum();
+  }else{
+    document.getElementById("history-page").classList.add("active");
+    document.querySelector("nav button:last-child").classList.add("active-tab");
+    updateHistory();
+  }
+}
+
+updateMonthlySum();
+updateHistory();
+</script>
+</body>
+</html>
