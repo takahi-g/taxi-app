@@ -68,7 +68,7 @@
     </div>
     <div class="black-card">
         <div id="hist-label" style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 5px;">集計</div>
-        <div class="badge" id="hist-rate">暫定歩合: --%</div>
+        <div class="badge" id="hist-rate">暫定歩合: 55.0%</div>
         <div class="total-val" id="hist-total-income">0円</div>
         <div style="font-size:0.9rem; opacity:0.7; margin-top:5px;">期間総売上: <span id="hist-total-sales">0</span>円</div>
     </div>
@@ -104,11 +104,11 @@
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
     
-    // 西鉄タクシー歩合率（42万以下も一律55%に修正）
+    // 西鉄タクシー歩合率（42万以下も一律55.0%）
     function getRate(net) { 
-        if (net >= 550000) return 60.8; // 55万以上
-        if (net >= 470000) return 57.9; // 47万〜55万
-        return 55.0; // 47万未満（42万以下含む）はすべて55%
+        if (net >= 550000) return 60.8; 
+        if (net >= 470000) return 57.9; 
+        return 55.0; // 47万未満は一律55%（42万以下も含む）
     }
 
     function refresh() {
@@ -137,7 +137,7 @@
         const fRate = getRate(fTotalNet);
 
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
-        document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
+        document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate.toFixed(1)}%`;
         document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
 
