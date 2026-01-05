@@ -1,179 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>タクシー売上管理</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 12px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .card {
+      background: #fff;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 8px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      font-size: 16px;
+    }
+    button {
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    button.danger {
+      background: #ff3b30;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      border-bottom: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+    }
+    .small {
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚕 タクシー売上管理</h1>
+
+<div class="card">
+  <h2>売上入力</h2>
+  <label>営業日</label>
+  <input type="date" id="workDate">
+
+  <label>売上金額（円）</label>
+  <input type="number" id="amount" placeholder="例：35000">
+
+  <label>メモ（任意）</label>
+  <input type="text" id="memo" placeholder="例：雨・忙しい">
+
+  <button onclick="addRecord()">追加</button>
+</div>
+
+<div class="card">
+  <h2>月別集計</h2>
+  <select id="monthSelect" onchange="renderSummary()"></select>
+  <p id="summaryText"></p>
+</div>
+
+<div class="card">
+  <h2>売上履歴</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>日付</th>
+        <th>売上</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="history"></tbody>
+  </table>
+</div>
+
 <script>
-    /* ====== 設定 ====== */
-    const STORAGE = {
-        HIST: 'taxi_v11_hist',
-        SETS: 'taxi_v11_sets'
-    };
+const STORAGE_KEY = "taxi_sales_v1";
 
-    const DB = {
-        save: (k, d) => localStorage.setItem(k, JSON.stringify(d)),
-        load: (k, def) => JSON.parse(localStorage.getItem(k)) || def
-    };
-    
-    // 西鉄タクシー歩合率（税抜売上 net 基準）
-    function getRate(net) { 
-        if (net >= 550000) return 60.8; 
-        if (net >= 470000) return 57.9; 
-        if (net >= 420000) return 55.0;
-        return 50.0;
-    }
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
-    function getCurrentMonth() {
-        const d = document.getElementById('work-date').value;
-        return d ? d.substring(0, 7) : null;
-    }
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
 
-    function refresh() {
-        const history = DB.load(STORAGE.HIST, []);
-        const sets = DB.load(STORAGE.SETS, { goal: 550000, days: 12 });
-        const curMonth = getCurrentMonth();
+function addRecord() {
+  const date = document.getElementById("workDate").value;
+  const amount = Number(document.getElementById("amount").value);
+  const memo = document.getElementById("memo").value;
 
-        /* ====== ステータス計算 ====== */
-        const monthlyData = curMonth
-            ? history.filter(h => h.date && h.date.startsWith(curMonth))
-            : [];
+  if (!date || !amount) {
+    alert("日付と売上を入力してね");
+    return;
+  }
 
-        const workedCount = [...new Set(monthlyData.map(h => h.date))].length;
-        const totalNet = monthlyData.reduce((sum, h) => sum + h.net, 0);
+  records.push({
+    id: Date.now(),
+    date,
+    amount,
+    memo
+  });
 
-        document.getElementById('stat-worked').innerText = workedCount + " 日";
-        const remain = Math.max(0, sets.days - workedCount);
-        document.getElementById('stat-remain').innerText = remain + " 日";
-        const norm = remain > 0
-            ? Math.ceil(Math.max(0, sets.goal - totalNet) / remain)
-            : 0;
-        document.getElementById('stat-daily-norm').innerText = norm.toLocaleString() + "円";
+  save();
+  renderAll();
+  document.getElementById("amount").value = "";
+  document.getElementById("memo").value = "";
+}
 
-        /* ====== 履歴・集計 ====== */
-        const fYear = document.getElementById('hist-year').value;
-        const fMonth = document.getElementById('hist-month').value;
-        const fHist = history.filter(h => h.date && h.date.startsWith(`${fYear}-${fMonth}`));
-        const fTotalNet = fHist.reduce((sum, h) => sum + h.net, 0);
-        const fRate = getRate(fTotalNet);
+function deleteRecord(id) {
+  if (!confirm("削除する？")) return;
+  records = records.filter(r => r.id !== id);
+  save();
+  renderAll();
+}
 
-        document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
-        document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
-        document.getElementById('hist-total-income').innerText =
-            Math.floor(fTotalNet * (fRate / 100)).toLocaleString() + "円";
-        document.getElementById('hist-total-sales').innerText =
-            Math.floor(fTotalNet).toLocaleString();
+function renderHistory() {
+  const tbody = document.getElementById("history");
+  tbody.innerHTML = "";
 
-        document.getElementById('history-list').innerHTML =
-            fHist.sort((a, b) => b.id - a.id).map(h => `
-                <tr>
-                    <td style="font-weight:bold;">${h.date.substring(5).replace('-', '/')}</td>
-                    <td style="font-weight:800; font-size:1.1rem;">${Math.floor(h.net).toLocaleString()}</td>
-                    <td class="hist-btns">
-                        <button class="btn-icon btn-pencil" onclick="editData(${h.id})">✏️</button>
-                        <button class="btn-icon btn-trash" onclick="deleteData(${h.id})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('') ||
-            '<tr><td colspan="3" style="text-align:center; padding:20px;">なし</td></tr>';
-    }
+  records
+    .sort((a,b) => a.date < b.date ? 1 : -1)
+    .forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.date}</td>
+        <td>${r.amount.toLocaleString()}</td>
+        <td><button class="danger" onclick="deleteRecord(${r.id})">削除</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
 
-    function updatePreview() {
-        const gross = parseFloat(document.getElementById('input-gross').value) || 0;
-        const curMonth = getCurrentMonth();
-        if (!curMonth) {
-            document.getElementById('preview-area').innerText = '日付を選択してください';
-            return;
-        }
+function renderMonthSelect() {
+  const select = document.getElementById("monthSelect");
+  const months = [...new Set(records.map(r => r.date.slice(0,7)))].sort().reverse();
 
-        const net = Math.floor(gross / 1.1);
-        const history = DB.load(STORAGE.HIST, []);
-        const total = history
-            .filter(h => h.date && h.date.startsWith(curMonth))
-            .reduce((sum, h) => sum + h.net, 0);
+  select.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join("");
+}
 
-        const combined = total + net;
-        const rate = getRate(combined);
+function renderSummary() {
+  const month = document.getElementById("monthSelect").value;
+  if (!month) return;
 
-        document.getElementById('preview-area').innerText =
-            `今月見込み手取り: ${Math.floor(combined * (rate / 100)).toLocaleString()}円`;
-    }
+  const list = records.filter(r => r.date.startsWith(month));
+  const total = list.reduce((sum,r) => sum + r.amount, 0);
+  const avg = list.length ? Math.round(total / list.length) : 0;
 
-    function saveData() {
-        const date = document.getElementById('work-date').value;
-        const gross = parseFloat(document.getElementById('input-gross').value);
+  document.getElementById("summaryText").innerHTML = `
+    <strong>合計：</strong>${total.toLocaleString()} 円<br>
+    <strong>日数：</strong>${list.length} 日<br>
+    <strong>平均：</strong>${avg.toLocaleString()} 円
+  `;
+}
 
-        if (!date) {
-            alert('日付を選択してください');
-            return;
-        }
-        if (!gross) return;
+function renderAll() {
+  renderHistory();
+  renderMonthSelect();
+  renderSummary();
+}
 
-        const h = DB.load(STORAGE.HIST, []);
-        h.push({
-            id: Date.now(),
-            date,
-            gross,
-            net: Math.floor(gross / 1.1)
-        });
-
-        DB.save(STORAGE.HIST, h);
-        document.getElementById('input-gross').value = '';
-        refresh();
-    }
-
-    function deleteData(id) {
-        if (!confirm('消去しますか？')) return;
-        const h = DB.load(STORAGE.HIST, []);
-        DB.save(STORAGE.HIST, h.filter(x => x.id !== id));
-        refresh();
-    }
-
-    function editData(id) {
-        const h = DB.load(STORAGE.HIST, []);
-        const i = h.find(x => x.id === id);
-        const n = prompt('税込修正', i.gross);
-        if (!n) return;
-        i.gross = parseFloat(n);
-        i.net = Math.floor(i.gross / 1.1);
-        DB.save(STORAGE.HIST, h);
-        refresh();
-    }
-
-    function saveSettings() {
-        DB.save(STORAGE.SETS, {
-            goal: parseFloat(document.getElementById('set-goal').value) || 550000,
-            days: parseFloat(document.getElementById('set-days').value) || 12
-        });
-        refresh();
-    }
-
-    function showPage(p) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
-        document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
-        document.getElementById('page-' + p).classList.add('active-tab');
-        document.getElementById('nav-' + p).classList.add('active');
-        refresh();
-    }
-
-    /* ====== 初期化 ====== */
-    document.getElementById('work-date').valueAsDate = new Date();
-
-    const yr = document.getElementById('hist-year');
-    const mt = document.getElementById('hist-month');
-    const now = new Date();
-
-    for (let y = 2026; y >= 2024; y--) {
-        let o = document.createElement('option');
-        o.value = y;
-        o.text = y + '年';
-        yr.add(o);
-    }
-    for (let m = 1; m <= 12; m++) {
-        let o = document.createElement('option');
-        o.value = String(m).padStart(2, '0');
-        o.text = m + '月';
-        if (m === now.getMonth() + 1) o.selected = true;
-        mt.add(o);
-    }
-
-    const s = DB.load(STORAGE.SETS, { goal: 550000, days: 12 });
-    document.getElementById('set-goal').value = s.goal;
-    document.getElementById('set-days').value = s.days;
-
-    refresh();
+renderAll();
 </script>
+
+</body>
+</html>
