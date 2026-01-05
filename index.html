@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver3.3</title>
+    <title>タク計 マスター Ver3.4</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
@@ -15,7 +15,7 @@
         .input-with-unit { position: relative; display: flex; align-items: center; }
         
         input, select { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fafafa; display: block; -webkit-appearance: none; }
-        input[type="number"] { font-size: 2rem; text-align: center; font-weight: bold; color: var(--ios-blue); padding-right: 45px; }
+        input[type="number"] { font-size: 1.8rem; text-align: center; font-weight: bold; color: var(--ios-blue); padding-right: 45px; }
         
         .unit-text { position: absolute; right: 15px; font-weight: bold; color: #888; font-size: 1.2rem; pointer-events: none; }
 
@@ -50,7 +50,7 @@
         <div class="card">
             <h1>💰 リアルタイム入力</h1>
             <div id="monthly-sum-info" class="total-badge">読込中...</div>
-            <input type="date" id="work-date" onchange="updateUI()">
+            <input type="date" id="work-date">
             <span style="font-size:1.1rem; font-weight:bold; color:#666; text-align:center; display:block;">今回の税込運賃</span>
             <div class="input-with-unit">
                 <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
@@ -121,8 +121,8 @@
                 </div>
                 <div style="font-size: 0.85rem; color: #666;">調整後の1日ノルマ (税抜)</div>
                 <div style="font-size: 2.2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
-                    出勤：<span id="disp-progress">0</span> / <span id="disp-total-days">0</span> 日
+                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;" id="disp-progress-area">
+                    出勤：<span id="disp-now-count">0</span> / <span id="disp-total-days">0</span> 日
                 </div>
             </div>
         </div>
@@ -148,8 +148,9 @@
 
         function saveSettings() {
             const g = parseFloat(document.getElementById('goal-amount').value) || 0;
-            const td = parseFloat(document.getElementById('total-days').value) || 1;
-            const rd = parseFloat(document.getElementById('remain-days').value) || 1;
+            const td = parseFloat(document.getElementById('total-days').value) || 0;
+            const rd = parseFloat(document.getElementById('remain-days').value) || 0;
+            
             storage.set('taxi_settings', { goal: g, totalDays: td, remainDays: rd });
             updateUI();
         }
@@ -168,12 +169,16 @@
             
             // 残り目標とノルマ計算
             const remainingGoalAmount = Math.max(0, settings.goal - pastSalesInMonth);
-            const dailyNorm = Math.max(0, Math.ceil(remainingGoalAmount / settings.remainDays));
+            const rd = settings.remainDays > 0 ? settings.remainDays : 1; // 0除算防止
+            const dailyNorm = Math.ceil(remainingGoalAmount / rd);
 
             document.getElementById('calc-remain-goal').innerText = Math.floor(remainingGoalAmount).toLocaleString() + "円";
-            document.getElementById('calc-daily-norm').innerText = dailyNorm.toLocaleString() + "円";
-            document.getElementById('disp-total-days').innerText = settings.totalDays;
-            document.getElementById('disp-progress').innerText = settings.totalDays - settings.remainDays + 1;
+            document.getElementById('calc-daily-norm').innerText = (isNaN(dailyNorm) ? 0 : dailyNorm).toLocaleString() + "円";
+            document.getElementById('disp-total-days').innerText = settings.totalDays || 0;
+            
+            // 進捗の表示（全日数 - 残り日数 + 1 = 今何日目か）
+            const nowCount = (settings.totalDays - settings.remainDays + 1);
+            document.getElementById('disp-now-count').innerText = isNaN(nowCount) ? 0 : nowCount;
             
             document.getElementById('monthly-sum-info').innerText = `${targetMonth}月 合計: ${Math.floor(pastSalesInMonth + todaySales).toLocaleString()}円`;
 
@@ -184,7 +189,7 @@
                 targetDisplay.innerText = `目標達成！ (+${Math.abs(diff).toLocaleString()}円)`;
             } else {
                 document.getElementById('target-display').style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-                targetDisplay.innerText = `${diff.toLocaleString()} 円`;
+                targetDisplay.innerText = (isNaN(diff) ? 0 : diff).toLocaleString() + " 円";
             }
         }
 
@@ -271,26 +276,30 @@
             document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-tab'));
             if(page === 'input') { document.getElementById('input-page').classList.add('active'); document.getElementById('tab1').classList.add('active-tab'); updateUI(); }
             else if(page === 'history') { document.getElementById('history-page').classList.add('active'); document.getElementById('tab2').classList.add('active-tab'); updateHistory(); }
-            else { document.getElementById('setting-page').classList.add('active'); document.getElementById('tab3').classList.add('active-tab'); }
+            else { document.getElementById('setting-page').classList.add('active'); document.getElementById('tab3').classList.add('active-tab'); updateUI(); }
         }
 
-        document.getElementById('work-date').valueAsDate = new Date();
+        // 初期ロード
+        const today = new Date();
+        document.getElementById('work-date').valueAsDate = today;
+        
         const yearSelect = document.getElementById('view-year');
-        const now = new Date();
-        for (let y = now.getFullYear(); y >= 2024; y--) {
+        for (let y = today.getFullYear(); y >= 2024; y--) {
             let opt = document.createElement('option'); opt.value = y; opt.text = y + "年";
             yearSelect.appendChild(opt);
         }
         const monthSelect = document.getElementById('view-month');
         for (let m = 1; m <= 12; m++) {
             let opt = document.createElement('option'); opt.value = String(m).padStart(2, '0'); opt.text = m + "月";
-            if(m === now.getMonth() + 1) opt.selected = true;
+            if(m === today.getMonth() + 1) opt.selected = true;
             monthSelect.appendChild(opt);
         }
+
         const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
         document.getElementById('goal-amount').value = settings.goal;
         document.getElementById('total-days').value = settings.totalDays;
         document.getElementById('remain-days').value = settings.remainDays;
+        
         updateUI();
     </script>
 </body>
