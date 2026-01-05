@@ -32,12 +32,36 @@
         .btn-pencil { background: var(--pencil-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
         .btn-trash { background: var(--trash-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
 
-        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; }
-        nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-        nav button.active { color: var(--ios-blue); }
-        .tab-content { display: none; }
-        .active-tab { display: block; }
-        input[type="date"] { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; box-sizing: border-box; }
+                /* ナビゲーションのズレを修正 */
+        nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(20px); 
+            border-top: 0.5px solid #c6c6c8; 
+            display: flex; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            height: 80px; 
+            box-sizing: border-box; /* 高さを固定 */
+            z-index: 1000;
+        }
+        nav button { 
+            flex: 1; 
+            border: none; 
+            background: none; 
+            color: #8e8e93; 
+            font-weight: bold; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 4px; 
+            height: 100%; /* 高さを親いっぱいに使う */
+            padding: 0; /* 余計なパディングをリセット */
+        }
+
     </style>
 </head>
 <body>
