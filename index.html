@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver3.2</title>
+    <title>タク計 マスター Ver3.3</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
         .card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
         h1 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 10px 0; }
         
-        input, select { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fafafa; margin-bottom: 10px; display: block; -webkit-appearance: none; }
-        input[type="number"] { font-size: 2.2rem; text-align: center; font-weight: bold; color: var(--ios-blue); padding: 15px; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.9rem; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .input-with-unit { position: relative; display: flex; align-items: center; }
         
+        input, select { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fafafa; display: block; -webkit-appearance: none; }
+        input[type="number"] { font-size: 2rem; text-align: center; font-weight: bold; color: var(--ios-blue); padding-right: 45px; }
+        
+        .unit-text { position: absolute; right: 15px; font-weight: bold; color: #888; font-size: 1.2rem; pointer-events: none; }
+
         .target-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 15px; }
-        .daily-norm-card { background: #eef6ff; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; }
+        .norm-card { background: #eef6ff; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 1px solid #d0e3ff; }
 
         .total-badge { font-size: 0.85rem; background: #333; padding: 5px 12px; border-radius: 20px; margin-bottom: 10px; display: inline-block; color: white; }
         .result { background: #fdfdfd; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 2px solid #eef6ff; }
         .btn-save { width: 100%; min-height: 60px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-weight: bold; font-size: 1.4rem; margin-top: 10px; }
         
-        .btn-group { display: flex; gap: 8px; justify-content: flex-end; }
-        .action-btn { width: 44px; height: 44px; border-radius: 10px; border: none; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .edit-btn { background: var(--soft-blue); color: var(--ios-blue); }
-        .delete-btn { background: var(--soft-red); color: var(--ios-red); }
-
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; padding-bottom: env(safe-area-inset-bottom); height: 70px; }
         nav button { flex: 1; border: none; background: none; font-size: 0.8rem; color: #666; padding: 5px; }
         nav button.active-tab { color: var(--ios-blue); font-weight: bold; }
@@ -51,7 +52,10 @@
             <div id="monthly-sum-info" class="total-badge">読込中...</div>
             <input type="date" id="work-date" onchange="updateUI()">
             <span style="font-size:1.1rem; font-weight:bold; color:#666; text-align:center; display:block;">今回の税込運賃</span>
-            <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
+            <div class="input-with-unit">
+                <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
+                <span class="unit-text">円</span>
+            </div>
             <div id="resArea" class="result" style="display:none;">
                 <div style="font-size:1rem; margin-bottom:10px;">手取り: <span id="income" style="color:var(--ios-red); font-weight:bold; font-size:1.8rem;">0</span>円</div>
                 <button class="btn-save" onclick="saveData()">売上に加算する</button>
@@ -72,12 +76,10 @@
                 <select id="view-month" onchange="updateHistory()"></select>
             </div>
             <select id="view-mode" onchange="updateHistory()">
-                <option value="detail">月別詳細（鉛筆ボタンあり）</option>
+                <option value="detail">月別詳細</option>
                 <option value="summary">年間まとめ</option>
             </select>
-        </div>
-        <div class="card" style="padding: 10px;">
-            <table style="width:100%; border-collapse:collapse;">
+            <table style="width:100%; border-collapse:collapse; margin-top:10px;">
                 <tbody id="history-list"></tbody>
             </table>
         </div>
@@ -86,18 +88,42 @@
     <div id="setting-page" class="tab-content">
         <div class="card">
             <h1>⚙️ 目標・出勤設定</h1>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:0.9rem; color:#666; font-weight:bold;">月間目標 (税抜)</label>
-                <input type="number" id="goal-amount" oninput="saveSettings()">
+            
+            <div class="input-group">
+                <label>今月の目標売上 (税抜)</label>
+                <div class="input-with-unit">
+                    <input type="number" id="goal-amount" oninput="saveSettings()">
+                    <span class="unit-text">円</span>
+                </div>
             </div>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:0.9rem; color:#666; font-weight:bold;">今月の残り出勤日数</label>
-                <input type="number" id="remain-days" oninput="saveSettings()">
-                <p style="font-size:0.75rem; color:#888;">※今日を含めた残りの回数</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div class="input-group">
+                    <label>全出勤日数</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="total-days" oninput="saveSettings()">
+                        <span class="unit-text">日</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>残り日数</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="remain-days" oninput="saveSettings()">
+                        <span class="unit-text">日</span>
+                    </div>
+                </div>
             </div>
-            <div class="daily-norm-card">
+
+            <div class="norm-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">
+                    <span style="font-size: 0.9rem; color: #666;">今月の残り目標</span>
+                    <span style="font-weight: bold; color: var(--ios-red);" id="calc-remain-goal">0円</span>
+                </div>
                 <div style="font-size: 0.85rem; color: #666;">調整後の1日ノルマ (税抜)</div>
-                <div style="font-size: 2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
+                <div style="font-size: 2.2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
+                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
+                    出勤：<span id="disp-progress">0</span> / <span id="disp-total-days">0</span> 日
+                </div>
             </div>
         </div>
     </div>
@@ -122,8 +148,9 @@
 
         function saveSettings() {
             const g = parseFloat(document.getElementById('goal-amount').value) || 0;
-            const d = parseFloat(document.getElementById('remain-days').value) || 1;
-            storage.set('taxi_settings', { goal: g, days: d });
+            const td = parseFloat(document.getElementById('total-days').value) || 1;
+            const rd = parseFloat(document.getElementById('remain-days').value) || 1;
+            storage.set('taxi_settings', { goal: g, totalDays: td, remainDays: rd });
             updateUI();
         }
 
@@ -131,17 +158,23 @@
             const history = storage.get('taxi_history', []);
             const dInput = document.getElementById('work-date').value;
             const targetMonth = dInput.substring(0, 7);
-            const settings = storage.get('taxi_settings', { goal: 550000, days: 12 });
+            const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
 
             const pastSalesInMonth = history
                 .filter(d => d.date.startsWith(targetMonth) && d.date !== dInput)
                 .reduce((sum, item) => sum + item.sales, 0);
 
             const todaySales = history.find(d => d.date === dInput)?.sales || 0;
-            const remainingGoal = settings.goal - pastSalesInMonth;
-            const dailyNorm = Math.max(0, Math.ceil(remainingGoal / settings.days));
+            
+            // 残り目標とノルマ計算
+            const remainingGoalAmount = Math.max(0, settings.goal - pastSalesInMonth);
+            const dailyNorm = Math.max(0, Math.ceil(remainingGoalAmount / settings.remainDays));
 
+            document.getElementById('calc-remain-goal').innerText = Math.floor(remainingGoalAmount).toLocaleString() + "円";
             document.getElementById('calc-daily-norm').innerText = dailyNorm.toLocaleString() + "円";
+            document.getElementById('disp-total-days').innerText = settings.totalDays;
+            document.getElementById('disp-progress').innerText = settings.totalDays - settings.remainDays + 1;
+            
             document.getElementById('monthly-sum-info').innerText = `${targetMonth}月 合計: ${Math.floor(pastSalesInMonth + todaySales).toLocaleString()}円`;
 
             const diff = dailyNorm - todaySales;
@@ -202,14 +235,10 @@
                     <tr>
                         <td style="text-align:left; padding:12px; border-bottom:1px solid #eee;">${d.date.substring(5)}</td>
                         <td style="font-weight:bold; padding:12px; border-bottom:1px solid #eee;">${Math.floor(d.sales).toLocaleString()}円</td>
-                        <td style="padding:12px; border-bottom:1px solid #eee;">
-                            <div class="btn-group">
-                                <button class="action-btn edit-btn" onclick="editItem(${d.id})">✏️</button>
-                                <button class="action-btn delete-btn" onclick="deleteItem(${d.id})">🗑️</button>
-                            </div>
+                        <td style="padding:12px; border-bottom:1px solid #eee; text-align:right;">
+                            <button style="border:none; background:var(--soft-blue); color:var(--ios-blue); padding:5px 10px; border-radius:5px;" onclick="editItem(${d.id})">✏️</button>
                         </td>
-                    </tr>`).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">履歴がありません</td></tr>';
-                document.getElementById('total-label').innerText = `${selYear}年${selMonth}月の合計`;
+                    </tr>`).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">履歴なし</td></tr>';
             } else {
                 const yearData = {};
                 history.filter(d => d.date.startsWith(selYear)).forEach(d => {
@@ -218,10 +247,10 @@
                 });
                 list.innerHTML = Object.keys(yearData).sort().reverse().map(m => {
                     totalS += yearData[m];
-                    return `<tr><td style="text-align:left; padding:12px; border-bottom:1px solid #eee;">${m.substring(5)}月</td><td style="font-weight:bold; padding:12px; border-bottom:1px solid #eee;">${Math.floor(yearData[m]).toLocaleString()}円</td><td></td></tr>`;
-                }).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">データがありません</td></tr>';
-                document.getElementById('total-label').innerText = `${selYear}年の合計`;
+                    return `<tr><td style="text-align:left; padding:12px; border-bottom:1px solid #eee;">${m.substring(5)}月</td><td style="font-weight:bold; padding:12px; border-bottom:1px solid #eee; text-align:right;">${Math.floor(yearData[m]).toLocaleString()}円</td></tr>`;
+                }).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">データなし</td></tr>';
             }
+            document.getElementById('total-label').innerText = `${selYear}年${selMonth}月の合計`;
             document.getElementById('total-sales').innerText = Math.floor(totalS).toLocaleString();
             document.getElementById('total-income').innerText = Math.floor(totalS * (getRate(totalS)/100)).toLocaleString() + '円';
         }
@@ -236,12 +265,6 @@
                 updateHistory(); updateUI();
             }
         }
-        function deleteItem(id) {
-            if(!confirm('本当に削除しますか？')) return;
-            let history = storage.get('taxi_history', []);
-            storage.set('taxi_history', history.filter(d => d.id !== id));
-            updateHistory(); updateUI();
-        }
 
         function showPage(page) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -251,7 +274,6 @@
             else { document.getElementById('setting-page').classList.add('active'); document.getElementById('tab3').classList.add('active-tab'); }
         }
 
-        // 初期セットアップ
         document.getElementById('work-date').valueAsDate = new Date();
         const yearSelect = document.getElementById('view-year');
         const now = new Date();
@@ -265,9 +287,10 @@
             if(m === now.getMonth() + 1) opt.selected = true;
             monthSelect.appendChild(opt);
         }
-        const settings = storage.get('taxi_settings', { goal: 550000, days: 12 });
+        const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
         document.getElementById('goal-amount').value = settings.goal;
-        document.getElementById('remain-days').value = settings.days;
+        document.getElementById('total-days').value = settings.totalDays;
+        document.getElementById('remain-days').value = settings.remainDays;
         updateUI();
     </script>
 </body>
