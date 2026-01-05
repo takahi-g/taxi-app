@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver3.4</title>
+    <title>タク計 マスター Ver3.8</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
@@ -40,7 +40,7 @@
     </style>
 </head>
 <body>
-    <div id="toast">加算完了！💰</div>
+    <div id="toast">保存完了！💰</div>
 
     <div id="input-page" class="tab-content active">
         <div class="target-box" id="target-display">
@@ -88,7 +88,6 @@
     <div id="setting-page" class="tab-content">
         <div class="card">
             <h1>⚙️ 目標・出勤設定</h1>
-            
             <div class="input-group">
                 <label>今月の目標売上 (税抜)</label>
                 <div class="input-with-unit">
@@ -96,7 +95,6 @@
                     <span class="unit-text">円</span>
                 </div>
             </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                 <div class="input-group">
                     <label>全出勤日数</label>
@@ -113,17 +111,17 @@
                     </div>
                 </div>
             </div>
-
             <div class="norm-card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">
-                    <span style="font-size: 0.9rem; color: #666;">今月の残り目標</span>
+                    <span style="font-size: 0.9rem; color: #666;">今月の残り目標合計</span>
                     <span style="font-weight: bold; color: var(--ios-red);" id="calc-remain-goal">0円</span>
                 </div>
                 <div style="font-size: 0.85rem; color: #666;">調整後の1日ノルマ (税抜)</div>
                 <div style="font-size: 2.2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;" id="disp-progress-area">
-                    出勤：<span id="disp-now-count">0</span> / <span id="disp-total-days">0</span> 日
+                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
+                    出勤進捗：<span id="disp-now-count">0</span> / <span id="disp-total-days">0</span> 回目
                 </div>
+                <div style="font-size: 0.7rem; color: #999; margin-top: 3px;" id="last-update-info"></div>
             </div>
         </div>
     </div>
@@ -140,6 +138,30 @@
             set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
         };
 
+        // ★Ver3.8 【仕事した日だけ】自動更新するロジック
+        function autoUpdateDays() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentHour = now.getHours();
+            
+            let settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12, lastUpdateDate: "", lastWorkDate: "" });
+            
+            // 条件：
+            // 1. 朝7時以降である
+            // 2. 今日まだ更新していない
+            // 3. 「最後に売上を入力した日」が「今日より前」である（＝昨日以前の仕事が完了している）
+            if (currentHour >= 7 && settings.lastUpdateDate !== todayStr && settings.lastWorkDate !== "" && settings.lastWorkDate < todayStr) {
+                if (settings.remainDays > 0) {
+                    settings.remainDays -= 1;
+                    settings.lastUpdateDate = todayStr; // 今日の更新完了フラグ
+                    storage.set('taxi_settings', settings);
+                    document.getElementById('remain-days').value = settings.remainDays;
+                    console.log("出勤を確認。日数を更新しました。");
+                }
+            }
+            document.getElementById('last-update-info').innerText = "最終自動更新: " + (settings.lastUpdateDate || "なし");
+        }
+
         function getRate(sales) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
@@ -150,8 +172,9 @@
             const g = parseFloat(document.getElementById('goal-amount').value) || 0;
             const td = parseFloat(document.getElementById('total-days').value) || 0;
             const rd = parseFloat(document.getElementById('remain-days').value) || 0;
-            
-            storage.set('taxi_settings', { goal: g, totalDays: td, remainDays: rd });
+            let settings = storage.get('taxi_settings', {});
+            settings.goal = g; settings.totalDays = td; settings.remainDays = rd;
+            storage.set('taxi_settings', settings);
             updateUI();
         }
 
@@ -161,35 +184,28 @@
             const targetMonth = dInput.substring(0, 7);
             const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
 
-            const pastSalesInMonth = history
-                .filter(d => d.date.startsWith(targetMonth) && d.date !== dInput)
-                .reduce((sum, item) => sum + item.sales, 0);
-
+            const pastSalesInMonth = history.filter(d => d.date.startsWith(targetMonth) && d.date !== dInput).reduce((sum, item) => sum + item.sales, 0);
             const todaySales = history.find(d => d.date === dInput)?.sales || 0;
             
-            // 残り目標とノルマ計算
             const remainingGoalAmount = Math.max(0, settings.goal - pastSalesInMonth);
-            const rd = settings.remainDays > 0 ? settings.remainDays : 1; // 0除算防止
+            const rd = settings.remainDays > 0 ? settings.remainDays : 1;
             const dailyNorm = Math.ceil(remainingGoalAmount / rd);
 
             document.getElementById('calc-remain-goal').innerText = Math.floor(remainingGoalAmount).toLocaleString() + "円";
             document.getElementById('calc-daily-norm').innerText = (isNaN(dailyNorm) ? 0 : dailyNorm).toLocaleString() + "円";
             document.getElementById('disp-total-days').innerText = settings.totalDays || 0;
-            
-            // 進捗の表示（全日数 - 残り日数 + 1 = 今何日目か）
             const nowCount = (settings.totalDays - settings.remainDays + 1);
             document.getElementById('disp-now-count').innerText = isNaN(nowCount) ? 0 : nowCount;
-            
             document.getElementById('monthly-sum-info').innerText = `${targetMonth}月 合計: ${Math.floor(pastSalesInMonth + todaySales).toLocaleString()}円`;
 
             const diff = dailyNorm - todaySales;
             const targetDisplay = document.getElementById('target-remaining');
             if (diff <= 0) {
-                document.getElementById('target-display').style.background = "var(--sub-green)";
                 targetDisplay.innerText = `目標達成！ (+${Math.abs(diff).toLocaleString()}円)`;
+                document.getElementById('target-display').style.background = "var(--sub-green)";
             } else {
-                document.getElementById('target-display').style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
                 targetDisplay.innerText = (isNaN(diff) ? 0 : diff).toLocaleString() + " 円";
+                document.getElementById('target-display').style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
             }
         }
 
@@ -208,14 +224,21 @@
 
         function saveData() {
             const sGross = parseFloat(document.getElementById('sales').value);
-            const dInput = document.getElementById('work-date').value;
+            const dInput = document.getElementById('work-date').value; // 入力された日付
             if(!sGross) return;
             const sNet = Math.floor(sGross / 1.1);
+            
             let history = storage.get('taxi_history', []);
             let todayData = history.find(d => d.date === dInput);
             if (todayData) todayData.sales += sNet;
             else history.push({ id: Date.now(), date: dInput, sales: sNet });
             storage.set('taxi_history', history);
+
+            // ★売上を保存した日を「最終出勤日」として記録
+            let settings = storage.get('taxi_settings', {});
+            settings.lastWorkDate = dInput; 
+            storage.set('taxi_settings', settings);
+
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
             const toast = document.getElementById("toast");
@@ -231,7 +254,6 @@
             const selMonth = document.getElementById('view-month').value;
             const list = document.getElementById('history-list');
             let totalS = 0;
-
             if (mode === 'detail') {
                 const targetMonthStr = `${selYear}-${selMonth}`;
                 const filtered = history.filter(d => d.date.startsWith(targetMonthStr));
@@ -279,10 +301,8 @@
             else { document.getElementById('setting-page').classList.add('active'); document.getElementById('tab3').classList.add('active-tab'); updateUI(); }
         }
 
-        // 初期ロード
         const today = new Date();
         document.getElementById('work-date').valueAsDate = today;
-        
         const yearSelect = document.getElementById('view-year');
         for (let y = today.getFullYear(); y >= 2024; y--) {
             let opt = document.createElement('option'); opt.value = y; opt.text = y + "年";
@@ -295,11 +315,11 @@
             monthSelect.appendChild(opt);
         }
 
+        autoUpdateDays();
         const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12, remainDays: 12 });
         document.getElementById('goal-amount').value = settings.goal;
         document.getElementById('total-days').value = settings.totalDays;
         document.getElementById('remain-days').value = settings.remainDays;
-        
         updateUI();
     </script>
 </body>
