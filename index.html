@@ -165,5 +165,9 @@
         }
         updateHistory();
     </script>
+    // カレンダーの日付を選んだら、自動で閉じて確定させる魔法
+document.getElementById('work-date').addEventListener('change', function() {
+    this.blur(); // 入力を確定させてカレンダーを閉じる
+});
 </body>
 </html>
