@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver4.2</title>
-    <link rel="apple-touch-icon" href="https://r.jina.ai/i/52c6764585144b678227b3602f360742">
+    <title>タク計 マスター Ver4.3</title>
+    <link rel="apple-touch-icon" href="https://r.jina.ai/i/6f9064c5770146059d044f60f64c6328">
+    
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 12px; padding-top: calc(env(safe-area-inset-top) + 10px); color: #333; padding-bottom: 90px; }
@@ -44,7 +45,6 @@
         <div class="card">
             <div id="today-sum-info" class="total-badge">今日の合計: 0円 (税抜)</div>
             <div class="input-group"><input type="date" id="work-date"></div>
-            <span style="font-size:1rem; font-weight:bold; color:#666; text-align:center; display:block; margin-bottom:5px;">今回の税込運賃</span>
             <div class="input-with-unit">
                 <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
                 <span class="unit-text">円</span>
@@ -94,7 +94,6 @@
                 </div>
                 <div style="font-size: 0.85rem; color: #666;">1日あたりの平均ノルマ (税抜)</div>
                 <div style="font-size: 2.2rem; font-weight: bold; color: var(--ios-blue);" id="calc-daily-norm">0円</div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 5px;" id="last-update-info"></div>
             </div>
         </div>
     </div>
@@ -126,9 +125,12 @@
             const pastSalesInMonth = history.filter(d => d.date.startsWith(targetMonth) && d.date !== dInput).reduce((sum, item) => sum + item.sales, 0);
             const todaySales = history.find(d => d.date === dInput)?.sales || 0;
             const remainingMonthGoal = Math.max(0, settings.goal - pastSalesInMonth);
-            const rd = (parseFloat(settings.remainDays) || 0) > 0 ? parseFloat(settings.remainDays) : 1;
             
-            const dailyTarget = Math.ceil(remainingMonthGoal / rd);
+            // 安全な計算: 残り日数が0以下の時は1日として計算し、それ以外は設定通り
+            const rd = parseFloat(settings.remainDays);
+            const calcDays = (rd > 0) ? rd : 1;
+            
+            const dailyTarget = Math.ceil(remainingMonthGoal / calcDays);
             const todayRemaining = dailyTarget - todaySales;
 
             const targetDisplay = document.getElementById('target-remaining');
@@ -136,23 +138,20 @@
                 targetDisplay.innerText = `目標達成！ (+${Math.abs(todayRemaining).toLocaleString()}円)`;
                 document.getElementById('target-display').style.background = "var(--sub-green)";
             } else {
-                targetDisplay.innerText = (isNaN(todayRemaining) ? 0 : todayRemaining).toLocaleString() + " 円";
+                targetDisplay.innerText = todayRemaining.toLocaleString() + " 円";
                 document.getElementById('target-display').style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
             }
 
             document.getElementById('today-sum-info').innerText = `今日の合計: ${Math.floor(todaySales).toLocaleString()}円 (税抜)`;
             document.getElementById('calc-remain-goal').innerText = Math.floor(remainingMonthGoal).toLocaleString() + "円";
-            document.getElementById('calc-daily-norm').innerText = (isNaN(dailyTarget) ? 0 : dailyTarget).toLocaleString() + "円";
-            document.getElementById('last-update-info').innerText = "進捗: " + (settings.totalDays - settings.remainDays + 1) + " / " + settings.totalDays + " 回目";
+            document.getElementById('calc-daily-norm').innerText = dailyTarget.toLocaleString() + "円";
         }
 
         function saveSettings() {
             const g = parseFloat(document.getElementById('goal-amount').value) || 0;
             const td = parseFloat(document.getElementById('total-days').value) || 0;
             const rd = parseFloat(document.getElementById('remain-days').value) || 0;
-            let settings = storage.get('taxi_settings', {});
-            settings.goal = g; settings.totalDays = td; settings.remainDays = rd;
-            storage.set('taxi_settings', settings);
+            storage.set('taxi_settings', { goal: g, totalDays: td, remainDays: rd });
             updateUI();
         }
 
@@ -179,14 +178,10 @@
             if (todayData) todayData.sales += sNet;
             else history.push({ id: Date.now(), date: dInput, sales: sNet });
             storage.set('taxi_history', history);
-            let settings = storage.get('taxi_settings', {});
-            settings.lastWorkDate = dInput; 
-            storage.set('taxi_settings', settings);
             document.getElementById('sales').value = '';
             document.getElementById('resArea').style.display = 'none';
             const toast = document.getElementById("toast");
-            toast.className = "show";
-            setTimeout(() => toast.className = "", 2000);
+            toast.className = "show"; setTimeout(() => toast.className = "", 2000);
             updateUI();
         }
 
