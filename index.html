@@ -9,7 +9,6 @@
 :root{
   --ios-blue:#007AFF;
   --ios-red:#ff3b30;
-  --sub-green:#28a745;
   --soft-blue:#e7f2ff;
   --soft-red:#fff1f0;
 }
@@ -19,7 +18,7 @@ body{
   background:#f0f4f8;
   margin:0;
   padding:12px;
-  padding-bottom:100px;
+  padding-bottom:110px;
   color:#333;
 }
 
@@ -34,32 +33,29 @@ body{
 h1{
   font-size:1rem;
   color:var(--ios-blue);
-  margin:0 0 10px;
+  margin-bottom:10px;
 }
 
-input,select{
+input{
   width:100%;
   padding:12px;
-  font-size:1.1rem;
-  border:2px solid #eee;
   border-radius:12px;
-  background:#fafafa;
+  border:2px solid #eee;
   margin-bottom:10px;
 }
 
 input[type="number"]{
-  font-size:2.6rem;
-  text-align:center;
+  font-size:2.5rem;
   font-weight:bold;
+  text-align:center;
   color:var(--ios-blue);
 }
 
 .sales-label{
+  text-align:center;
   font-size:1.3rem;
   font-weight:900;
-  text-align:center;
   display:block;
-  margin-bottom:6px;
 }
 
 .result{
@@ -90,64 +86,40 @@ input[type="number"]{
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-th{
-  font-size:.8rem;
-  border-bottom:2px solid #eee;
-}
-td{
-  padding:10px 4px;
-  border-bottom:1px solid #eee;
-  text-align:right;
-}
+table{width:100%;border-collapse:collapse;}
+td,th{padding:10px;border-bottom:1px solid #eee;}
 .td-date{text-align:left;}
 
-.btn-group{
-  display:flex;
-  gap:8px;
-}
+.btn-group{display:flex;gap:6px;}
 .action-btn{
-  width:46px;
-  height:46px;
+  width:44px;height:44px;
   border-radius:12px;
   border:none;
-  font-size:1.3rem;
+  font-size:1.2rem;
 }
-.edit-btn{background:var(--soft-blue);color:var(--ios-blue);}
 .delete-btn{background:var(--soft-red);color:var(--ios-red);}
 
-/* ▼ ナビゲーション（ここが改善ポイント） */
+/* 押しやすい下タブ */
 nav{
   position:fixed;
   bottom:0;left:0;
   width:100%;
-  height:78px;
+  height:80px;
   background:#fff;
-  border-top:1px solid #ddd;
   display:flex;
+  border-top:1px solid #ddd;
 }
 
 nav button{
   flex:1;
   border:none;
   background:none;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-  font-size:.9rem;
-  color:#999;
+  font-size:1rem;
 }
 
-.tab-icon{font-size:1.5rem;}
-
-.active-tab{
+nav button.active{
   color:var(--ios-blue);
-  font-weight:700;
+  font-weight:bold;
   background:#f0f7ff;
   border-top:3px solid var(--ios-blue);
 }
@@ -156,102 +128,90 @@ nav button{
 
 <body>
 
-<!-- 入力 -->
-<div id="input-page" class="tab-content active">
+<div id="inputPage" class="tab-content active">
   <div class="card">
     <h1>💰 売上入力</h1>
-    <input type="date" id="work-date">
+    <input type="date" id="workDate">
     <span class="sales-label">税抜売上入力</span>
     <input type="number" id="sales" placeholder="0" oninput="calc()">
 
     <div id="resArea" class="result" style="display:none;">
-      <div>歩合 <span id="rate">--</span>%</div>
+      <div>歩合 <span id="rate">55</span>%</div>
       <div class="income"><span id="income">0</span>円</div>
       <button class="btn-save" onclick="saveData()">保存</button>
     </div>
   </div>
 </div>
 
-<!-- 履歴 -->
-<div id="history-page" class="tab-content">
+<div id="historyPage" class="tab-content">
   <div class="card">
     <h1>📊 履歴</h1>
     <table>
-      <thead>
-        <tr><th>日付</th><th>売上</th><th></th></tr>
-      </thead>
-      <tbody id="history-list"></tbody>
+      <tbody id="historyList"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ナビ -->
 <nav>
-  <button id="tab-input" class="active-tab" onclick="showPage('input')">
-    <div class="tab-icon">✏️</div>
-    <div>入力</div>
-  </button>
-  <button id="tab-history" onclick="showPage('history')">
-    <div class="tab-icon">📊</div>
-    <div>履歴</div>
-  </button>
+  <button id="tabInput" class="active" onclick="showPage('input')">✏️ 入力</button>
+  <button id="tabHistory" onclick="showPage('history')">📊 履歴</button>
 </nav>
 
 <script>
-document.getElementById("work-date").valueAsDate=new Date();
+const workDate = document.getElementById("workDate");
+const sales = document.getElementById("sales");
+const resArea = document.getElementById("resArea");
+const income = document.getElementById("income");
+const historyList = document.getElementById("historyList");
 
-function getRate(s){return s>=420000?55:55}
+workDate.valueAsDate = new Date();
 
 function calc(){
-  const s=+sales.value;
-  if(!s){resArea.style.display="none";return;}
+  const s = Number(sales.value);
+  if(!s){ resArea.style.display="none"; return; }
   resArea.style.display="block";
-  const r=getRate(s);
-  rate.textContent=r;
-  income.textContent=Math.floor(s*r/100).toLocaleString();
+  income.textContent = Math.floor(s*0.55).toLocaleString();
 }
 
 function saveData(){
-  const s=+sales.value;
-  const d=work-date.value;
-  if(!s||!d)return alert("入力してね");
-  const h=JSON.parse(localStorage.getItem("taxi_history")||"[]");
+  const s = Number(sales.value);
+  const d = workDate.value;
+  if(!s || !d) return alert("入力してね");
+  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]");
   h.push({id:Date.now(),date:d,sales:s});
   localStorage.setItem("taxi_history",JSON.stringify(h));
   sales.value="";
   resArea.style.display="none";
-  updateHistory();
 }
 
 function updateHistory(){
-  const h=JSON.parse(localStorage.getItem("taxi_history")||"[]");
-  history-list.innerHTML=h.map(d=>`
+  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]");
+  historyList.innerHTML = h.map(d=>`
     <tr>
       <td class="td-date">${d.date}</td>
       <td>${d.sales.toLocaleString()}</td>
       <td>
-        <div class="btn-group">
-          <button class="action-btn delete-btn" onclick="del(${d.id})">🗑️</button>
-        </div>
+        <button class="action-btn delete-btn" onclick="del(${d.id})">🗑️</button>
       </td>
     </tr>`).join("");
 }
 
 function del(id){
-  const h=JSON.parse(localStorage.getItem("taxi_history")||"[]").filter(x=>x.id!==id);
+  const h = JSON.parse(localStorage.getItem("taxi_history")||"[]")
+    .filter(x=>x.id!==id);
   localStorage.setItem("taxi_history",JSON.stringify(h));
   updateHistory();
 }
 
 function showPage(p){
   document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active-tab"));
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
   if(p==="input"){
-    input-page.classList.add("active");
-    tab-input.classList.add("active-tab");
+    document.getElementById("inputPage").classList.add("active");
+    document.getElementById("tabInput").classList.add("active");
   }else{
-    history-page.classList.add("active");
-    tab-history.classList.add("active-tab");
+    document.getElementById("historyPage").classList.add("active");
+    document.getElementById("tabHistory").classList.add("active");
     updateHistory();
   }
 }
