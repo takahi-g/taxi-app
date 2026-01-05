@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver1.3</title>
+    <title>タク計 マスター Ver1.4</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <style>
@@ -81,7 +81,6 @@
         document.getElementById('work-date').valueAsDate = new Date();
         document.getElementById('work-date').addEventListener('change', function() { this.blur(); });
 
-        // 歩合率計算の共通ルール
         function getRate(sales) {
             if (sales >= 550000) return 60.8;
             if (sales >= 470000) return 57.9;
@@ -94,7 +93,7 @@
             const res = document.getElementById('resArea');
             if (!s) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            let r = getRate(s); // 入力時はその日の売上での参考
+            let r = getRate(s);
             document.getElementById('rate').innerText = r;
             document.getElementById('income').innerText = Math.floor(s * (r / 100)).toLocaleString();
         }
@@ -120,15 +119,20 @@
             const now = new Date();
             let totalS = 0, totalI = 0;
 
+            // 「今月」の文字列を確実に作る (例: "2026-01")
+            const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
             if (mode === 'month') {
-                document.getElementById('total-label').innerText = '今月の推定手取り（月間合計で計算）';
+                document.getElementById('total-label').innerText = '今月の推定手取り（月計で計算）';
                 head.innerHTML = '<tr><th style="text-align:left;">日付</th><th>売上</th><th></th></tr>';
-                const mStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-                const thisMonth = history.filter(d => d.date.startsWith(mStr));
                 
-                // まず月間合計を出す
+                // 今月のデータだけを抜き出す
+                const thisMonth = history.filter(d => d.date.startsWith(currentMonthStr));
+                
+                // 売上を合計
                 thisMonth.forEach(d => totalS += d.sales);
-                // 月間合計から歩合率を決定
+                
+                // 合計売上から歩合と手取りを計算
                 let monthlyRate = getRate(totalS);
                 totalI = Math.floor(totalS * (monthlyRate / 100));
                 
@@ -143,6 +147,8 @@
                 document.getElementById('total-label').innerText = '今年の推定手取り合計';
                 head.innerHTML = '<tr><th style="text-align:left;">月</th><th>売上</th><th>手取り</th></tr>';
                 const yearData = {};
+                
+                // 今年1年間のデータを月ごとに集計
                 history.filter(d => d.date.startsWith(now.getFullYear())).forEach(d => {
                     const m = d.date.substring(0, 7);
                     if(!yearData[m]) yearData[m] = { s: 0 };
@@ -156,7 +162,7 @@
                     totalS += yearData[m].s; totalI += mIncome;
                     return `<tr><td style="text-align:left;">${m.substring(5)}月</td><td>${yearData[m].s.toLocaleString()}</td><td>${mIncome.toLocaleString()}</td></tr>`;
                 }).join('');
-                document.getElementById('total-rate-badge').innerText = `年間合計表示中`;
+                document.getElementById('total-rate-badge').innerText = `年間合計を表示中`;
             }
             document.getElementById('total-sales').innerText = totalS.toLocaleString();
             document.getElementById('total-income').innerText = totalI.toLocaleString() + '円';
