@@ -32,36 +32,13 @@
         .btn-pencil { background: var(--pencil-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
         .btn-trash { background: var(--trash-bg); width: 48px; height: 48px; border-radius: 14px; border: none; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
 
-                /* ナビゲーションのズレを修正 */
-        nav { 
-            position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
-            background: rgba(255,255,255,0.9); 
-            backdrop-filter: blur(20px); 
-            border-top: 0.5px solid #c6c6c8; 
-            display: flex; 
-            padding-bottom: env(safe-area-inset-bottom); 
-            height: 80px; 
-            box-sizing: border-box; /* 高さを固定 */
-            z-index: 1000;
-        }
-        nav button { 
-            flex: 1; 
-            border: none; 
-            background: none; 
-            color: #8e8e93; 
-            font-weight: bold; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 4px; 
-            height: 100%; /* 高さを親いっぱいに使う */
-            padding: 0; /* 余計なパディングをリセット */
-        }
-
+        /* ナビゲーションのズレを修正 */
+        nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; box-sizing: border-box; }
+        nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100% !important; margin: 0; padding: 0; }
+        nav button.active { color: var(--ios-blue); }
+        .tab-content { display: none; }
+        .active-tab { display: block; }
+        input[type="date"] { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -86,13 +63,13 @@
 </div>
 
 <div id="page-history" class="tab-content">
-    <div class="card" style="display:flex; gap:10px; background:transparent; box-shadow:none;">
-        <select id="hist-year" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold;"></select>
-        <select id="hist-month" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold;"></select>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <select id="hist-year" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold; background:white;"></select>
+        <select id="hist-month" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold; background:white;"></select>
     </div>
     <div class="black-card">
         <div id="hist-label" style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 5px;">集計</div>
-        <div class="badge" id="hist-rate">暫定歩合: 55.0%</div>
+        <div class="badge" id="hist-rate">暫定歩合: --%</div>
         <div class="total-val" id="hist-total-income">0円</div>
         <div style="font-size:0.9rem; opacity:0.7; margin-top:5px;">期間総売上: <span id="hist-total-sales">0</span>円</div>
     </div>
@@ -128,11 +105,10 @@
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
     
-    // 西鉄タクシー歩合率（42万以下も一律55.0%）
     function getRate(net) { 
-        if (net >= 550000) return 60.8; 
-        if (net >= 470000) return 57.9; 
-        return 55.0; // 47万未満は一律55%（42万以下も含む）
+        if (net >= 550000) return 60.8;
+        if (net >= 470000) return 57.9;
+        return 55.0;
     }
 
     function refresh() {
@@ -161,7 +137,7 @@
         const fRate = getRate(fTotalNet);
 
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
-        document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate.toFixed(1)}%`;
+        document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
         document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
 
@@ -200,7 +176,7 @@
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
     function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
-    function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); refresh(); }
+    function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); }
 
     document.getElementById('work-date').valueAsDate = new Date();
     const yr = document.getElementById('hist-year');
