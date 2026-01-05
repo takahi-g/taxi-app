@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>タク計 マスター Ver4.5</title>
+    <title>タク計 マスター Ver4.6</title>
     <link rel="apple-touch-icon" href="https://r.jina.ai/i/6f9064c5770146059d044f60f64c6328">
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --sub-green: #28a745; --soft-blue: #e7f2ff; --soft-red: #fff1f0; }
@@ -43,7 +43,9 @@
         </div>
         <div class="card">
             <div id="today-sum-info" class="total-badge">今日の合計: 0円 (税抜)</div>
-            <div class="input-group"><input type="date" id="work-date" onchange="updateUI()"></div>
+            <div class="input-group">
+                <input type="date" id="work-date" oninput="updateUI(); calc();">
+            </div>
             <div class="input-with-unit">
                 <input type="number" id="sales" pattern="\d*" placeholder="0" oninput="calc()">
                 <span class="unit-text">円</span>
@@ -125,29 +127,22 @@
         function updateUI() {
             const history = storage.get('taxi_history', []);
             const dInput = document.getElementById('work-date').value;
+            if (!dInput) return;
             const targetMonth = dInput.substring(0, 7);
             const settings = storage.get('taxi_settings', { goal: 550000, totalDays: 12 });
 
-            // 今月の履歴データ（今日より前）から出勤日数を数える
             const workedDays = history.filter(d => d.date.startsWith(targetMonth) && d.date < dInput).length;
-            // 今日すでに入力した売上があるか
             const todayData = history.find(d => d.date === dInput);
             const todaySales = todayData ? todayData.sales : 0;
             const isTodayWorked = todayData ? 1 : 0;
 
-            // 残り日数 ＝ 全出勤数 － 今日より前の出勤数
-            // (今日を含めてあと何日か、を表示)
             const remainingDays = Math.max(1, settings.totalDays - workedDays);
-            
-            // 今月の累計売上（今日を含まない）
             const pastSalesInMonth = history.filter(d => d.date.startsWith(targetMonth) && d.date !== dInput).reduce((sum, item) => sum + item.sales, 0);
             const remainingMonthGoal = Math.max(0, settings.goal - pastSalesInMonth);
             
-            // 今日のノルマ計算
             const dailyTarget = Math.ceil(remainingMonthGoal / remainingDays);
             const todayRemaining = dailyTarget - todaySales;
 
-            // 画面反映
             document.getElementById('remain-days').value = remainingDays;
             const targetDisplay = document.getElementById('target-remaining');
             if (todayRemaining <= 0) {
@@ -178,7 +173,8 @@
             res.style.display = 'block';
             const sNet = Math.floor(sGross / 1.1);
             const history = storage.get('taxi_history', []);
-            const targetMonth = document.getElementById('work-date').value.substring(0, 7);
+            const dInput = document.getElementById('work-date').value;
+            const targetMonth = dInput ? dInput.substring(0, 7) : "";
             const monthlyTotal = history.filter(d => d.date.startsWith(targetMonth)).reduce((sum, item) => sum + item.sales, 0);
             const r = getRate(monthlyTotal + sNet);
             document.getElementById('income').innerText = Math.floor(sNet * (r / 100)).toLocaleString();
@@ -187,7 +183,7 @@
         function saveData() {
             const sGross = parseFloat(document.getElementById('sales').value);
             const dInput = document.getElementById('work-date').value;
-            if(!sGross) return;
+            if(!sGross || !dInput) return;
             const sNet = Math.floor(sGross / 1.1);
             let history = storage.get('taxi_history', []);
             let todayData = history.find(d => d.date === dInput);
