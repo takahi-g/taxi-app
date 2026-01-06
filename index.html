@@ -105,6 +105,12 @@
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
     
+    function getRate(net) { 
+        if (net >= 550000) return 60.8;
+        if (net >= 470000) return 57.9;
+        return 55.0;
+    }
+
     function refresh() {
         const history = DB.load('taxi_v11_hist', []);
         const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
@@ -112,30 +118,10 @@
         const selectedDate = document.getElementById('work-date').value;
         const curMonth = selectedDate.substring(0, 7);
         const monthlyData = history.filter(h => h.date.startsWith(curMonth));
-
-        // --- ここから修正：残り日数の計算ロジック ---
-        const workedDates = [...new Set(monthlyData.map(h => h.date))];
-        const workedCount = workedDates.length;
-
-        // 「今日」がすでに履歴にあるかチェック
-        const todayStr = new Date().toISOString().split('T')[0];
-        const isTodayWorked = workedDates.includes(todayStr);
-
-        // 現在時刻が朝7時前かどうかを判定
-        const now = new Date();
-        const isBefore7AM = now.getHours() < 7;
-
-        let remainDays;
-        if (isTodayWorked && isBefore7AM) {
-            // 今日はもう入力済みだけど、まだ朝7時前なら「今日」を残り日数に含める（分母を減らさない）
-            remainDays = Math.max(1, sets.days - (workedCount - 1));
-        } else {
-            // それ以外（未入力、または朝7時以降）は通常通り
-            remainDays = Math.max(1, sets.days - workedCount);
-        }
-        // --- 修正ここまで ---
-
+        const workedCount = [...new Set(monthlyData.map(h => h.date))].length;
+        
         const salesSoFar = monthlyData.reduce((sum, h) => sum + h.net, 0);
+        const remainDays = Math.max(1, sets.days - workedCount);
         const dailyNorm = Math.ceil(Math.max(0, sets.goal - salesSoFar) / (remainDays || 1));
 
         document.getElementById('disp-norm').innerText = dailyNorm.toLocaleString() + " 円";
@@ -166,7 +152,6 @@
             </tr>
         `).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;">なし</td></tr>';
     }
-
 
     function updatePreview() {
         const gross = parseFloat(document.getElementById('input-gross').value) || 0;
