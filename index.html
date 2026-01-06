@@ -39,6 +39,10 @@
         .btn-pencil, .btn-trash { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-pencil { background: var(--pencil-bg); } .btn-trash { background: var(--trash-bg); }
 
+        .btn-action { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        .btn-copy { background: #eef6ff; color: var(--ios-blue); }
+        .btn-restore { background: #f2f2f7; color: #3a3a3c; }
+
         nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 100; }
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
@@ -90,7 +94,7 @@
 
 <div id="page-settings" class="tab-content">
     <div class="card">
-        <h2>⚙️ 設定</h2>
+        <h2>⚙️ 基本設定</h2>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f2f2f7;">
             <span>目標売上 (税抜)</span>
             <input type="number" id="set-goal" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-size:1.1rem; font-weight:bold; color:var(--ios-blue);">
@@ -99,6 +103,13 @@
             <span>全出勤日数</span>
             <input type="number" id="set-days" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-size:1.1rem; font-weight:bold; color:var(--ios-blue);">
         </div>
+    </div>
+
+    <div class="card">
+        <h2>💾 バックアップとお守り</h2>
+        <p style="font-size:0.8rem; color:#8e8e93; line-height:1.4;">機種変更の時や、万が一のためにデータを保存できます。</p>
+        <button class="btn-action btn-copy" onclick="copyBackup()">バックアップ用データをコピー</button>
+        <button class="btn-action btn-restore" onclick="restoreBackup()">データを復元する</button>
     </div>
 </div>
 
@@ -239,6 +250,26 @@
     function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正(円)', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
+
+    // バックアップ機能
+    function copyBackup() {
+        const history = localStorage.getItem('taxi_v11_hist') || '[]';
+        const sets = localStorage.getItem('taxi_v11_sets') || '{}';
+        const backupStr = btoa(unescape(encodeURIComponent(JSON.stringify({ history, sets }))));
+        navigator.clipboard.writeText(backupStr).then(() => alert('バックアップ用文字をコピーしました！LINEなどに貼り付けて保存してね。'));
+    }
+    function restoreBackup() {
+        const str = prompt('保存していたバックアップ文字を貼り付けてください：');
+        if (!str) return;
+        try {
+            const data = JSON.parse(decodeURIComponent(escape(atob(str))));
+            if (confirm('データを復元しますか？（今のデータは上書きされます）')) {
+                localStorage.setItem('taxi_v11_hist', data.history);
+                localStorage.setItem('taxi_v11_sets', data.sets);
+                location.reload();
+            }
+        } catch(e) { alert('文字が正しくないみたい…もう一度確認してみて！'); }
+    }
 
     document.getElementById('work-date').valueAsDate = new Date();
     const yr = document.getElementById('hist-year'); const mt = document.getElementById('hist-month');
