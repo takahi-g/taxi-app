@@ -8,13 +8,13 @@
     <meta name="apple-mobile-web-app-title" content="タク計">
     <title>タク計</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #333333; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
+        :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #1c1c1e; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; }
         .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; }
         .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
-        .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .badge { background: var(--ios-green); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 8px; }
-        .total-val { font-size: 2.4rem; font-weight: 800; }
+        .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 25px 20px; margin-bottom: 20px; text-align: center; }
+        .badge { background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .total-val { font-size: 2.6rem; font-weight: 900; color: #FFD700; margin: 5px 0; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
         
@@ -80,12 +80,19 @@
         <select id="hist-month" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold; background:white;"></select>
     </div>
     <div class="card" style="padding: 15px;"><div class="cal-grid" id="cal-container"></div></div>
+    
     <div class="black-card">
-        <div id="hist-label" style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 5px;">集計</div>
-        <div class="badge" id="hist-rate">暫定歩合: --%</div>
-        <div class="total-val" id="hist-total-income">0円</div>
-        <div style="font-size:0.9rem; opacity:0.7; margin-top:5px;">期間総売上: <span id="hist-total-sales">0</span>円</div>
+        <div id="hist-label" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">2026年1月の合計</div>
+        <div style="font-size:0.9rem; opacity:0.8;">期間総売上 (税抜)</div>
+        <div style="font-size: 1.4rem; font-weight: 800; margin-bottom: 10px;"><span id="hist-total-sales">0</span> 円</div>
+        
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <div class="badge" id="hist-rate">暫定歩合: --%</div>
+            <div style="font-size:0.85rem; opacity:0.8;">推定歩合給</div>
+            <div class="total-val" id="hist-total-income">0円</div>
+        </div>
     </div>
+
     <div class="card">
         <h2 style="color:#1c1c1e">日別履歴</h2>
         <div id="history-groups"></div>
@@ -125,7 +132,7 @@
     function getRate(net) { 
         if (net >= 550000) return 60.8;
         if (net >= 470000) return 57.9;
-        return 55.0;
+        return 55.0; // 42万以下も55%で計算
     }
 
     function toggleDay(dateStr) {
@@ -251,7 +258,6 @@
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
 
-    // バックアップ機能
     function copyBackup() {
         const history = localStorage.getItem('taxi_v11_hist') || '[]';
         const sets = localStorage.getItem('taxi_v11_sets') || '{}';
