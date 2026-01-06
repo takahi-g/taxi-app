@@ -58,16 +58,27 @@
         <div class="val"><span id="disp-norm">0</span> 円</div>
         <div id="disp-progress" style="font-size: 0.8rem; opacity: 0.8;">---</div>
     </div>
-    <div class="card">
+     <div class="card">
         <input type="date" id="work-date" onchange="refresh()" style="margin-bottom:20px;">
+        
         <div style="text-align: center;">
-            <div style="background: #1c1c1e; color: white; padding: 12px 10px; border-radius: 16px; display: inline-block; margin-bottom: 20px; min-width: 95%; box-sizing: border-box; vertical-align: middle;">
+            <div style="background: #1c1c1e; color: white; padding: 12px 10px; border-radius: 16px; display: inline-block; margin-bottom: 25px; min-width: 95%; box-sizing: border-box; vertical-align: middle;">
                 <div id="disp-today-sum"></div>
             </div>
-            <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width:90%; border:none; border-bottom:3px solid var(--ios-blue); font-size:3rem; text-align:center; font-weight:800; outline:none;">
-            <button onclick="saveData()" style="width:100%; background:var(--ios-blue); color:white; border:none; border-radius:16px; padding:20px; font-size:1.4rem; font-weight:bold; margin-top:30px;">売上を追加</button>
+
+            <div style="text-align: left; margin-left: 5%; margin-bottom: 8px;">
+                <label style="font-size: 0.9rem; font-weight: bold; color: #8e8e93;">売上入力 (税込)</label>
+            </div>
+            <div style="position: relative; width: 90%; margin: 0 auto;">
+                <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 2rem; font-weight: 800; color: var(--ios-blue);">¥</span>
+                <input type="number" id="input-gross" pattern="\d*" placeholder="0" 
+                    style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box; color: #1c1c1e;">
+            </div>
+
+            <button onclick="saveData()" style="width:100%; background:var(--ios-blue); color:white; border:none; border-radius:16px; padding:20px; font-size:1.4rem; font-weight:bold; margin-top:30px; box-shadow: 0 4px 12px rgba(0,122,255,0.3);">売上を追加</button>
         </div>
     </div>
+
 </div>
 
 <div id="page-history" class="tab-content">
