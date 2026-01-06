@@ -104,13 +104,7 @@
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
     
-    function getRate(net) { 
-        if (net >= 550000) return 60.8;
-        if (net >= 470000) return 57.9;
-        return 55.0;
-    }
-
-    function refresh() {
+        function refresh() {
         const history = DB.load('taxi_v11_hist', []);
         const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
         
@@ -118,32 +112,38 @@
         const curMonth = selectedDate.substring(0, 7);
         const monthlyData = history.filter(h => h.date.startsWith(curMonth));
         
-        // 出勤日数のカウント（ユニークな日付の数）
         const workedDates = [...new Set(monthlyData.map(h => h.date))];
         const workedCount = workedDates.length;
 
-        // 【修正ポイント】朝7時までは分母を減らさないロジック
         const now = new Date();
         const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
         const isTodayEntered = workedDates.includes(todayStr);
         const isBefore7AM = now.getHours() < 7;
 
-        let remainDays;
+        // --- ノルマ計算の修正 ---
+        
+        // 1. まず「今日を含めた残り日数」を出す
+        let remainDaysForNorm;
         if (isTodayEntered && isBefore7AM) {
-            // 今日入力済みだけど朝7時前なら、まだ「今日」を分母に残す
-            remainDays = Math.max(1, sets.days - (workedCount - 1));
+            remainDaysForNorm = Math.max(1, sets.days - (workedCount - 1));
         } else {
-            // それ以外は通常通り
-            remainDays = Math.max(1, sets.days - workedCount);
+            remainDaysForNorm = Math.max(1, sets.days - (isTodayEntered ? workedCount - 1 : workedCount));
         }
 
-        const salesSoFar = monthlyData.reduce((sum, h) => sum + h.net, 0);
-        const dailyNorm = Math.ceil(Math.max(0, sets.goal - salesSoFar) / (remainDays || 1));
-
-        document.getElementById('disp-norm').innerText = dailyNorm.toLocaleString() + " 円";
-        document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
+        // 2. 今日の「開始時点」での累計売上を出す（今日入力した分は引かない）
+        const salesBeforeToday = monthlyData.filter(h => h.date !== todayStr).reduce((sum, h) => sum + h.net, 0);
         
+        // 3. 今日の「ベースノルマ」を計算
+        const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / (remainDaysForNorm || 1));
+        
+        // 4. 「ベースノルマ」から「今日稼いだ分」をそのまま引く！
         const todayNetSum = monthlyData.filter(h => h.date === selectedDate).reduce((sum, h) => sum + h.net, 0);
+        const finalTodayNorm = Math.max(0, dailyBaseNorm - todayNetSum);
+
+        document.getElementById('disp-norm').innerText = Math.floor(finalTodayNorm).toLocaleString() + " 円";
+        // --- 修正ここまで ---
+
+        document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
         document.getElementById('disp-today-sum').innerText = Math.floor(todayNetSum).toLocaleString();
 
         const fYear = document.getElementById('hist-year').value;
@@ -168,6 +168,7 @@
             </tr>
         `).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;">なし</td></tr>';
     }
+
 
     function updatePreview() {
         const gross = parseFloat(document.getElementById('input-gross').value) || 0;
