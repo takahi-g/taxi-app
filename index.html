@@ -85,7 +85,9 @@
         <div id="hist-label" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">集計</div>
         <div style="font-size:0.9rem; opacity:0.8;">期間総売上 (税抜)</div>
         <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 5px;"><span id="hist-total-sales">0</span> <small style="font-size:0.9rem;">円</small></div>
-        <div style="font-size: 0.85rem; color: #34c759; font-weight: bold; margin-bottom: 15px;">( 1日平均: <span id="hist-avg-sales">0</span>円 )</div>
+        <div style="font-size: 0.8rem; color: #34c759; font-weight: bold; margin-bottom: 15px;">
+            ( 1日平均: <span id="hist-avg-sales">0</span>円 / 目標: <span id="hist-target-avg">0</span>円 )
+        </div>
         
         <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
             <div class="badge" id="hist-rate">暫定歩合: --%</div>
@@ -204,13 +206,15 @@
         const fHist = history.filter(h => h.date.startsWith(`${fYear}-${String(fMonth).padStart(2,'0')}`));
         const fTotalNet = fHist.reduce((sum, h) => sum + h.net, 0);
         const fRate = getRate(fTotalNet);
-        const fDays = [...new Set(fHist.map(h => h.date))].length; // 表示月の出勤日数
+        const fDays = [...new Set(fHist.map(h => h.date))].length; 
         const fAvg = fDays > 0 ? Math.floor(fTotalNet / fDays) : 0;
+        const fTargetAvg = Math.floor(sets.goal / sets.days);
 
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
         document.getElementById('hist-avg-sales').innerText = fAvg.toLocaleString();
+        document.getElementById('hist-target-avg').innerText = fTargetAvg.toLocaleString();
         document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
 
         const groups = {};
@@ -260,7 +264,7 @@
     }
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
     function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正(円)', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
-    function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: 12 }); refresh(); }
+    function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
 
     function copyBackup() {
