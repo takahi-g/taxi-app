@@ -28,7 +28,6 @@
         .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); }
         .is-today { border: 2px solid var(--ios-blue); }
 
-        /* 履歴リストのデザイン調整 */
         .day-group { margin-bottom: 12px; overflow: hidden; }
         .day-header { display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 15px; padding: 18px 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .day-details { display: none; background: white; padding: 0 15px 10px 15px; border-radius: 0 0 15px 15px; margin-top: -10px; border-top: 1px solid #f2f2f7; }
@@ -41,6 +40,8 @@
         .detail-item:last-child { border-bottom: none; }
         .detail-label { font-size: 0.85rem; color: #8e8e93; }
         .detail-value { font-size: 1.1rem; font-weight: 700; color: #1c1c1e; }
+        .detail-actions { display: flex; gap: 8px; }
+        .btn-pencil { width: 40px; height: 40px; border-radius: 12px; border: none; background: var(--pencil-bg); color: var(--ios-blue); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
         .btn-trash { width: 40px; height: 40px; border-radius: 12px; border: none; background: var(--trash-bg); color: var(--ios-red); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 
         nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 100; }
@@ -205,7 +206,6 @@
         const y = parseInt(document.getElementById('hist-year').value);
         const m = parseInt(document.getElementById('hist-month').value);
         renderCalendar(y, m, history);
-        
         const fHist = history.filter(h => h.date.startsWith(`${y}-${String(m).padStart(2,'0')}`));
         const totalNet = fHist.reduce((sum, h) => sum + h.net, 0);
         const rate = getRate(totalNet);
@@ -222,8 +222,21 @@
         fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
             const sum = groups[date].reduce((s, h) => s + h.net, 0);
-            return `<div class="day-group" id="group-${date}"><div class="day-header" onclick="toggleDay('${date}')"><span>${date.substring(5).replace('-','/')} <span class="arrow">▶</span></span><span style="font-weight:800; font-size:1.1rem;">${Math.floor(sum).toLocaleString()}円</span></div><div class="day-details">${groups[date].map((h, i) => `<div class="detail-item"><div><div class="detail-label">${i+1}件目</div><div class="detail-value">税抜 ${h.net.toLocaleString()}円</div></div><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div>`).join('')}</div></div>`;
+            return `<div class="day-group" id="group-${date}"><div class="day-header" onclick="toggleDay('${date}')"><span>${date.substring(5).replace('-','/')} <span class="arrow">▶</span></span><span style="font-weight:800; font-size:1.1rem;">${Math.floor(sum).toLocaleString()}円</span></div><div class="day-details">${groups[date].map((h, i) => `<div class="detail-item"><div><div class="detail-label">${i+1}件目</div><div class="detail-value">税抜 ${h.net.toLocaleString()}円</div></div><div class="detail-actions"><button class="btn-pencil" onclick="editData(${h.id})">✏️</button><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div></div>`).join('')}</div></div>`;
         }).join('') || '<div style="text-align:center;padding:20px;color:#8e8e93;">データなし</div>';
+    }
+
+    function editData(id) {
+        const h = DB.load('taxi_v11_hist', []);
+        const item = h.find(x => x.id === id);
+        if(!item) return;
+        const newVal = prompt("売上(税込)を修正:", item.gross);
+        if(newVal !== null && !isNaN(newVal) && newVal !== "") {
+            item.gross = parseFloat(newVal);
+            item.net = Math.floor(item.gross / 1.1);
+            DB.save('taxi_v11_hist', h);
+            refresh();
+        }
     }
 
     function scrollToDate(dateStr) {
