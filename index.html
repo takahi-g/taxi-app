@@ -37,7 +37,22 @@
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; }
         .active-tab { display: block; }
-        input[type="date"] { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; box-sizing: border-box; }
+                /* 日付入力欄のはみ出しを修正 */
+        input[type="date"] { 
+            border: 1px solid #ddd; 
+            border-radius: 12px; 
+            padding: 12px; 
+            font-size: 1rem; 
+            color: var(--ios-blue); 
+            font-weight: bold; 
+            width: 100%; 
+            box-sizing: border-box; /* これが重要！枠線を内側に含める設定 */
+            appearance: none;       /* iOSのデフォルトスタイルをリセット */
+            -webkit-appearance: none;
+            background: #efeff4;   /* 少し色をつけて分かりやすく */
+            display: block;        /* 横いっぱいに広げる */
+        }
+
     </style>
 </head>
 <body>
