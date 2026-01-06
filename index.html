@@ -118,6 +118,8 @@
         </div>
     </div>
     <div class="card">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px;">💾 バックアップ</h2>
+        <p style="font-size: 0.8rem; color: #8e8e93; margin-bottom: 15px;">機種変更の時や、万が一のためにデータを保存・復元できます。</p>
         <button class="btn-action" style="width:100%; padding:15px; background:#eef6ff; color:var(--ios-blue); border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;" onclick="copyBackup()">データをコピー</button>
         <button class="btn-action" style="width:100%; padding:15px; background:#f2f2f7; color:#3a3a3c; border:none; border-radius:12px; font-weight:bold;" onclick="restoreBackup()">データを復元</button>
     </div>
@@ -179,45 +181,34 @@
         const monthlyData = history.filter(h => h.date.startsWith(curMonth));
         const workedDates = [...new Set(monthlyData.map(h => h.date))];
         const workedCount = workedDates.length;
-
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
         let remainDays = Math.max(1, sets.days - (workedDates.includes(todayStr) && now.getHours() < 7 ? workedCount - 1 : workedCount));
-
         const salesBeforeToday = monthlyData.filter(h => h.date !== todayStr).reduce((sum, h) => sum + h.net, 0);
         const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / remainDays);
         const todayRecords = monthlyData.filter(h => h.date === selectedDate);
         const todayNetSum = todayRecords.reduce((sum, h) => sum + h.net, 0);
         const finalTodayNorm = Math.max(0, dailyBaseNorm - todayNetSum);
-
         if (isSave && finalTodayNorm <= 0 && !hasCelebratedToday && selectedDate === todayStr) { startCelebration(); hasCelebratedToday = true; }
-
         const normEl = document.getElementById('disp-norm');
         normEl.innerText = Math.floor(finalTodayNorm).toLocaleString();
         normEl.setAttribute('data-base-norm', finalTodayNorm + (isSave ? 0 : todayNetSum));
-        
         document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
         document.getElementById('disp-today-sum').innerHTML = `<div style="display: flex; align-items: center; justify-content: space-between; width: 100%;"><span style="font-size: 0.75rem; color: #aaa;">今日の合計(税抜)</span><span style="color: #FFD700; font-size: 1.5rem; font-weight: 900; flex-grow: 1; text-align: center;">${Math.floor(todayNetSum).toLocaleString()}<small style="font-size:0.8rem; margin-left:2px;">円</small></span><span style="font-size: 0.75rem; color: #8e8e93;">(税込${Math.floor(todayRecords.reduce((s,h)=>s+h.gross,0)).toLocaleString()}円)</span></div>`;
-
         updateHistoryTab(history, sets);
     }
 
     function updateHistoryTab(history, sets) {
-        const y = parseInt(document.getElementById('hist-year').value);
-        const m = parseInt(document.getElementById('hist-month').value);
+        const y = parseInt(document.getElementById('hist-year').value), m = parseInt(document.getElementById('hist-month').value);
         renderCalendar(y, m, history);
         const fHist = history.filter(h => h.date.startsWith(`${y}-${String(m).padStart(2,'0')}`));
-        const totalNet = fHist.reduce((sum, h) => sum + h.net, 0);
-        const rate = getRate(totalNet);
-        const days = [...new Set(fHist.map(h => h.date))].length;
-        
+        const totalNet = fHist.reduce((sum, h) => sum + h.net, 0), rate = getRate(totalNet), days = [...new Set(fHist.map(h => h.date))].length;
         document.getElementById('hist-label').innerText = `${y}年${m}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${rate}%`;
         document.getElementById('hist-total-sales').innerText = Math.floor(totalNet).toLocaleString();
         document.getElementById('hist-avg-sales').innerText = (days > 0 ? Math.floor(totalNet/days) : 0).toLocaleString();
         document.getElementById('hist-target-avg').innerText = Math.floor(sets.goal/sets.days).toLocaleString();
         document.getElementById('hist-total-income').innerText = Math.floor(totalNet * (rate/100)).toLocaleString() + "円";
-        
         const groups = {};
         fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
@@ -229,13 +220,12 @@
     function editData(id) {
         const h = DB.load('taxi_v11_hist', []);
         const item = h.find(x => x.id === id);
-        if(!item) return;
-        const newVal = prompt("売上(税込)を修正:", item.gross);
-        if(newVal !== null && !isNaN(newVal) && newVal !== "") {
-            item.gross = parseFloat(newVal);
-            item.net = Math.floor(item.gross / 1.1);
-            DB.save('taxi_v11_hist', h);
-            refresh();
+        if(item) {
+            const newVal = prompt("売上(税込)を修正:", item.gross);
+            if(newVal !== null && !isNaN(newVal) && newVal !== "") {
+                item.gross = parseFloat(newVal); item.net = Math.floor(item.gross / 1.1);
+                DB.save('taxi_v11_hist', h); refresh();
+            }
         }
     }
 
@@ -243,10 +233,8 @@
         const el = document.getElementById(`group-${dateStr}`);
         if (el) {
             document.querySelectorAll('.day-group').forEach(g => g.classList.remove('open'));
-            el.classList.add('open');
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.style.background = '#fff9e6';
-            setTimeout(() => { el.style.background = 'transparent'; }, 1000);
+            el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.background = '#fff9e6'; setTimeout(() => { el.style.background = 'transparent'; }, 1000);
         }
     }
 
@@ -255,13 +243,11 @@
         container.innerHTML = '';
         const days = ['日','月','火','水','木','金','土'];
         days.forEach(d => container.innerHTML += `<div class="cal-day-label">${d}</div>`);
-        const first = new Date(year, month - 1, 1).getDay();
-        const last = new Date(year, month, 0).getDate();
+        const first = new Date(year, month - 1, 1).getDay(), last = new Date(year, month, 0).getDate();
         for (let i = 0; i < first; i++) container.innerHTML += '<div></div>';
         for (let d = 1; d <= last; d++) {
             const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const hasData = history.some(h => h.date === dateStr);
-            const isToday = dateStr === new Date().toISOString().split('T')[0] ? 'is-today' : '';
+            const hasData = history.some(h => h.date === dateStr), isToday = dateStr === new Date().toISOString().split('T')[0] ? 'is-today' : '';
             container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="scrollToDate('${dateStr}')">${d}</div>`;
         }
     }
@@ -271,9 +257,7 @@
         if (!gross) return;
         const h = DB.load('taxi_v11_hist', []);
         h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) });
-        DB.save('taxi_v11_hist', h);
-        document.getElementById('input-gross').value = '';
-        refresh(true);
+        DB.save('taxi_v11_hist', h); document.getElementById('input-gross').value = ''; refresh(true);
     }
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
