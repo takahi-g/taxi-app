@@ -11,37 +11,35 @@
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #1c1c1e; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; overflow-x: hidden; }
         
-        /* メインヒーローエリア */
-        .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; position: relative; }
-        .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
-        
-        /* お祝い演出（紙吹雪と文字） */
+        /* お祝いレイヤー（一番手前） */
         #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
-        #celebration-text { color: #FFD700; font-size: 3rem; font-weight: 900; text-shadow: 0 4px 15px rgba(0,0,0,0.6); transform: scale(0.5); transition: transform 0.5s; text-align: center; line-height: 1.1; }
-        .confetti { position: fixed; width: 12px; height: 12px; z-index: 10001; pointer-events: none; }
+        #celebration-text { color: #FFD700; font-size: 3.5rem; font-weight: 900; text-shadow: 0 4px 20px rgba(0,0,0,0.8); transform: scale(0.5); transition: transform 0.5s; text-align: center; line-height: 1.1; z-index: 10002; }
+        .confetti { position: fixed; z-index: 10001; pointer-events: none; top: -20px; }
 
-        /* 黒カードと履歴 */
+        /* メインUI */
+        .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; }
+        .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
         .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 25px 20px; margin-bottom: 20px; text-align: center; }
         .badge { background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 10px; }
         .total-val { font-size: 2.6rem; font-weight: 900; color: #FFD700; margin: 5px 0; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
-        /* 共通UI */
+        /* カレンダーと履歴 */
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; }
-        .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; }
-        .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; }
+        .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; border-radius: 10px; }
+        .has-data { position: relative; }
+        .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); }
         .is-today { border: 2px solid var(--ios-blue); }
 
-        .day-group { border-bottom: 1px solid #f2f2f7; overflow: hidden; }
-        .day-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; cursor: pointer; }
-        .day-details { display: none; background: #f9f9fb; padding: 10px; border-radius: 12px; margin-bottom: 10px; }
+        .day-group { border-bottom: 1px solid #f2f2f7; overflow: hidden; margin-bottom: 10px; }
+        .day-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; cursor: pointer; background: white; border-radius: 15px; padding: 15px; }
+        .day-details { display: none; background: #f9f9fb; padding: 10px; border-radius: 12px; margin-top: 5px; }
         .open .day-details { display: block; }
         .open .arrow { transform: rotate(90deg); }
-        .arrow { transition: 0.2s; color: #ccc; font-size: 0.8rem; margin-left: 5px; display: inline-block; }
+        .arrow { transition: 0.2s; color: #ccc; font-size: 0.8rem; }
 
-        .btn-pencil, .btn-trash { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
-        .btn-pencil { background: var(--pencil-bg); } .btn-trash { background: var(--trash-bg); }
+        .btn-trash { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--trash-bg); display: flex; align-items: center; justify-content: center; }
 
         nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 100; }
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
@@ -49,8 +47,8 @@
         .tab-content { display: none; } .active-tab { display: block; }
 
         @keyframes confetti-fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
     </style>
 </head>
@@ -120,8 +118,8 @@
         </div>
     </div>
     <div class="card">
-        <button class="btn-action btn-copy" style="width:100%; padding:15px; background:#eef6ff; color:var(--ios-blue); border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;" onclick="copyBackup()">データをコピー</button>
-        <button class="btn-action btn-restore" style="width:100%; padding:15px; background:#f2f2f7; color:#3a3a3c; border:none; border-radius:12px; font-weight:bold;" onclick="restoreBackup()">データを復元</button>
+        <button class="btn-action" style="width:100%; padding:15px; background:#eef6ff; color:var(--ios-blue); border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;" onclick="copyBackup()">データをコピー</button>
+        <button class="btn-action" style="width:100%; padding:15px; background:#f2f2f7; color:#3a3a3c; border:none; border-radius:12px; font-weight:bold;" onclick="restoreBackup()">データを復元</button>
     </div>
 </div>
 
@@ -142,7 +140,8 @@
         overlay.style.opacity = '1';
         text.style.transform = 'scale(1)';
 
-        for (let i = 0; i < 100; i++) {
+        // 150枚の紙吹雪を時間差で降らせる
+        for (let i = 0; i < 150; i++) {
             setTimeout(createConfetti, i * 20);
         }
 
@@ -156,14 +155,20 @@
         const c = document.createElement('div');
         c.className = 'confetti';
         c.style.left = Math.random() * 100 + 'vw';
-        c.style.top = '-20px';
         c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
-        c.style.animation = `confetti-fall ${2 + Math.random() * 3}s linear forwards`;
-        c.style.width = Math.random() * 10 + 7 + 'px';
-        c.style.height = c.style.width;
-        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        
+        // 落下速度と回転
+        const duration = 3 + Math.random() * 2;
+        c.style.animation = `confetti-fall ${duration}s linear forwards`;
+        
+        // 大きさと形
+        const size = Math.random() * 12 + 8;
+        c.style.width = size + 'px';
+        c.style.height = (Math.random() > 0.5 ? size : size * 0.6) + 'px';
+        c.style.borderRadius = Math.random() > 0.5 ? '2px' : '50%';
+        
         document.body.appendChild(c);
-        setTimeout(() => c.remove(), 5000);
+        setTimeout(() => c.remove(), duration * 1000);
     }
 
     function getRate(net) { 
@@ -172,7 +177,6 @@
         return 55.0; 
     }
 
-    // 数字が減っていくリアルタイム演出用
     function updateNormPreview() {
         const inputVal = parseFloat(document.getElementById('input-gross').value) || 0;
         const netInput = Math.floor(inputVal / 1.1);
@@ -188,12 +192,11 @@
         const curMonth = selectedDate.substring(0, 7);
         const monthlyData = history.filter(h => h.date.startsWith(curMonth));
         const workedDates = [...new Set(monthlyData.map(h => h.date))];
-        const workedCount = workedDates.length;
+        const workedCount = workedCountCalc(monthlyData);
 
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
-        const isTodayEntered = workedDates.includes(todayStr);
-        let remainDaysForNorm = Math.max(1, sets.days - (isTodayEntered && now.getHours() < 7 ? workedCount - 1 : workedCount));
+        let remainDaysForNorm = Math.max(1, sets.days - (workedDates.includes(todayStr) && now.getHours() < 7 ? workedCount - 1 : workedCount));
 
         const salesBeforeToday = monthlyData.filter(h => h.date !== todayStr).reduce((sum, h) => sum + h.net, 0);
         const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / remainDaysForNorm);
@@ -201,23 +204,19 @@
         const todayRecords = monthlyData.filter(h => h.date === selectedDate);
         const todayNetSum = todayRecords.reduce((sum, h) => sum + h.net, 0);
         const todayGrossSum = todayRecords.reduce((sum, h) => sum + h.gross, 0);
-        
         const finalTodayNorm = Math.max(0, dailyBaseNorm - todayNetSum);
 
-        // お祝い発動
         if (isSave && finalTodayNorm <= 0 && !hasCelebratedToday && selectedDate === todayStr) {
             startCelebration();
             hasCelebratedToday = true;
         }
 
-        // ノルマ表示
         const normEl = document.getElementById('disp-norm');
         normEl.innerText = Math.floor(finalTodayNorm).toLocaleString();
-        normEl.setAttribute('data-base-norm', finalTodayNorm); // プレビュー用に保存
+        normEl.setAttribute('data-base-norm', finalTodayNorm + (isSave ? 0 : todayNetSum)); 
         
         document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
 
-        // 今日の合計表示（復活！）
         document.getElementById('disp-today-sum').innerHTML = 
             `<div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <span style="font-size: 0.75rem; color: #aaa;">今日の合計(税抜)</span>
@@ -225,14 +224,21 @@
                 <span style="font-size: 0.75rem; color: #8e8e93;">(税込${Math.floor(todayGrossSum).toLocaleString()}円)</span>
              </div>`;
 
-        // 履歴タブ
+        updateHistoryList(history, sets);
+    }
+
+    function workedCountCalc(monthlyData) {
+        return [...new Set(monthlyData.map(h => h.date))].length;
+    }
+
+    function updateHistoryList(history, sets) {
         const fYear = parseInt(document.getElementById('hist-year').value);
         const fMonth = parseInt(document.getElementById('hist-month').value);
         renderCalendar(fYear, fMonth, history);
         const fHist = history.filter(h => h.date.startsWith(`${fYear}-${String(fMonth).padStart(2,'0')}`));
         const fTotalNet = fHist.reduce((sum, h) => sum + h.net, 0);
         const fRate = getRate(fTotalNet);
-        const fDays = [...new Set(fHist.map(h => h.date))].length; 
+        const fDays = workedCountCalc(fHist);
         const fAvg = fDays > 0 ? Math.floor(fTotalNet / fDays) : 0;
         const fTargetAvg = Math.floor(sets.goal / sets.days);
         
@@ -247,7 +253,7 @@
         fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
             const daySum = groups[date].reduce((s, h) => s + h.net, 0);
-            return `<div class="card day-group" id="group-${date}" style="padding:10px; margin-bottom:10px;"><div class="day-header" onclick="toggleDay('${date}')" style="display:flex; justify-content:space-between; font-weight:bold;"><span>${date.substring(5).replace('-','/')} <span class="arrow">▶</span></span><span>${Math.floor(daySum).toLocaleString()}円</span></div><div class="day-details" style="margin-top:10px;">${groups[date].map((h, index) => `<div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #eee;"><span>${index+1}件目: 税抜${h.net.toLocaleString()}円</span><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div>`).join('')}</div></div>`;
+            return `<div class="day-group" id="group-${date}"><div class="day-header" onclick="toggleDay('${date}')"><span>${date.substring(5).replace('-','/')} <span class="arrow">▶</span></span><span style="font-weight:800;">${Math.floor(daySum).toLocaleString()}円</span></div><div class="day-details">${groups[date].map((h, index) => `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #eee;"><span>${index+1}件目: 税抜${h.net.toLocaleString()}円</span><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div>`).join('')}</div></div>`;
         }).join('') || '<div style="text-align:center;padding:20px;color:#8e8e93;">データなし</div>';
     }
 
@@ -280,7 +286,7 @@
             const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`; 
             const hasData = history.some(h => h.date === dateStr); 
             const isToday = dateStr === todayStr ? 'is-today' : ''; 
-            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}">${d}</div>`; 
+            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="showPage('history')">${d}</div>`; 
         } 
     }
 
@@ -291,8 +297,8 @@
     const yr = document.getElementById('hist-year'); const mt = document.getElementById('hist-month');
     for(let y=2026; y>=2024; y--) { let o = document.createElement('option'); o.value=y; o.text=y+'年'; yr.add(o); }
     for(let m=1; m<=12; m++) { let o = document.createElement('option'); o.value=m; o.text=m+'月'; if(m === new Date().getMonth()+1) o.selected = true; mt.add(o); }
-    const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
-    document.getElementById('set-goal').value = sets.goal; document.getElementById('set-days').value = sets.days;
+    const setsInitial = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
+    document.getElementById('set-goal').value = setsInitial.goal; document.getElementById('set-days').value = setsInitial.days;
     refresh();
 </script>
 </body>
