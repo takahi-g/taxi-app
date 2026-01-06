@@ -18,15 +18,21 @@
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
         
-        /* カレンダーのスタイル */
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; padding-bottom: 5px; }
-        .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; }
+        .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; cursor: pointer; }
+        .cal-cell:active { background: #e5e5ea; }
         .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; }
-        .is-today { background: #e5e5ea; }
+        .is-today { border: 2px solid var(--ios-blue); box-sizing: border-box; }
+        .selected-day { background: var(--ios-blue) !important; color: white !important; }
+        .selected-day::after { background: white; }
 
         .hist-table { width: 100%; border-collapse: collapse; }
         .hist-table td { padding: 15px 0; border-bottom: 1px solid #f2f2f7; }
+        /* スクロール先を強調するアニメーション */
+        @keyframes highlight { from { background: #fff9c4; } to { background: transparent; } }
+        .scroll-target { animation: highlight 2s ease-out; }
+
         .hist-btns { display: flex; gap: 10px; justify-content: flex-end; }
         .btn-pencil, .btn-trash { width: 44px; height: 44px; border-radius: 12px; border: none; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
         .btn-pencil { background: var(--pencil-bg); } .btn-trash { background: var(--trash-bg); }
@@ -36,8 +42,6 @@
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; } .active-tab { display: block; }
         input[type="date"] { border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; box-sizing: border-box; -webkit-appearance: none; background: #efeff4; }
-        @keyframes count-up { from { transform: translateY(5px); opacity: 0.7; } to { transform: translateY(0); opacity: 1; } }
-        .anim-pop { animation: count-up 0.3s ease-out; }
     </style>
 </head>
 <body>
@@ -128,6 +132,18 @@
         window.requestAnimationFrame(step);
     }
 
+    // ★日付タップでスクロールする機能
+    function scrollToDate(dateStr) {
+        const targetId = `row-${dateStr}`;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetEl.classList.remove('scroll-target');
+            void targetEl.offsetWidth; 
+            targetEl.classList.add('scroll-target');
+        }
+    }
+
     function renderCalendar(year, month, history) {
         const container = document.getElementById('cal-container');
         container.innerHTML = '';
@@ -143,7 +159,7 @@
             const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const hasData = history.some(h => h.date === dateStr);
             const isToday = dateStr === todayStr ? 'is-today' : '';
-            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}">${d}</div>`;
+            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="scrollToDate('${dateStr}')">${d}</div>`;
         }
     }
 
@@ -198,8 +214,8 @@
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
 
         document.getElementById('history-list').innerHTML = fHist.sort((a,b) => b.id - a.id).map(h => `
-            <tr>
-                <td style="font-weight:bold;">${h.date.substring(5).replace('-','/')}</td>
+            <tr id="row-${h.date}">
+                <td style="font-weight:bold; width: 60px;">${h.date.substring(5).replace('-','/')}</td>
                 <td style="font-weight:800;font-size:1.1rem;text-align:center;">${Math.floor(h.net).toLocaleString()}</td>
                 <td class="hist-btns">
                     <button class="btn-pencil" onclick="editData(${h.id})">✏️</button>
