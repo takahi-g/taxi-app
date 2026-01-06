@@ -16,6 +16,7 @@
         .badge { background: var(--ios-green); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 8px; }
         .total-val { font-size: 2.4rem; font-weight: 800; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
         
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; }
@@ -42,6 +43,7 @@
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; } .active-tab { display: block; }
+        input[type="date"], input[type="number"] { -webkit-appearance: none; }
     </style>
 </head>
 <body>
@@ -53,7 +55,7 @@
         <div id="disp-progress" style="font-size: 0.8rem; opacity: 0.8;">---</div>
     </div>
     <div class="card">
-        <input type="date" id="work-date" onchange="refresh()" style="border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; margin-bottom:20px; background:#efeff4; -webkit-appearance:none;">
+        <input type="date" id="work-date" onchange="refresh()" style="border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; margin-bottom:20px; background:#efeff4;">
         <div style="text-align: center;">
             <div style="background: #1c1c1e; color: white; padding: 12px 10px; border-radius: 16px; display: inline-block; margin-bottom: 25px; min-width: 95%;">
                 <div id="disp-today-sum"></div>
@@ -61,7 +63,7 @@
             <div style="text-align: left; margin-left: 5%; margin-bottom: 8px;"><label style="font-size: 0.9rem; font-weight: bold; color: #8e8e93;">売上入力 (税込)</label></div>
             <div style="position: relative; width: 90%; margin: 0 auto;">
                 <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 2rem; font-weight: 800; color: var(--ios-blue);">¥</span>
-                <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box; -webkit-appearance:none;">
+                <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box;">
             </div>
             <button onclick="saveData()" style="width:100%; background:var(--ios-blue); color:white; border:none; border-radius:16px; padding:20px; font-size:1.4rem; font-weight:bold; margin-top:30px;">売上を追加</button>
         </div>
@@ -189,7 +191,7 @@
         document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
 
         const groups = {};
-        fHist.forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
+        fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
             const daySum = groups[date].reduce((s, h) => s + h.net, 0);
@@ -200,11 +202,16 @@
                         <div class="day-sum">${Math.floor(daySum).toLocaleString()}円</div>
                     </div>
                     <div class="day-details">
-                        ${groups[date].map(h => `
+                        ${groups[date].map((h, index) => `
                             <div class="detail-row">
-                                <div style="font-size: 0.95rem;">
-                                    <strong>税込:${h.gross.toLocaleString()}円</strong><br>
-                                    <span style="color:#8e8e93; font-size:0.8rem;">(税抜:${h.net.toLocaleString()}円)</span>
+                                <div style="font-size: 0.95rem; display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #e5e5ea; color: #3a3a3c; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; min-width: 45px; text-align: center;">
+                                        ${index + 1}件目
+                                    </div>
+                                    <div>
+                                        <strong>税込:${h.gross.toLocaleString()}円</strong>
+                                        <div style="color:#8e8e93; font-size:0.75rem;">(税抜:${h.net.toLocaleString()}円)</div>
+                                    </div>
                                 </div>
                                 <div style="display:flex; gap:8px;">
                                     <button class="btn-pencil" onclick="editData(${h.id})">✏️</button>
