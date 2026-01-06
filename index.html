@@ -9,8 +9,8 @@
     <title>タク計</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #1c1c1e; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; }
-        .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; overflow-x: hidden; }
+        .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; position: relative; }
         .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
         .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 25px 20px; margin-bottom: 20px; text-align: center; }
         .badge { background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 10px; }
@@ -18,6 +18,11 @@
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
         
+        /* お祝い演出用 */
+        #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
+        #celebration-text { color: #FFD700; font-size: 3rem; font-weight: 900; text-shadow: 0 0 20px rgba(0,0,0,0.5); transform: scale(0.5); transition: transform 0.5s; text-align: center; }
+        .confetti { position: absolute; width: 10px; height: 10px; background: #f00; opacity: 0; }
+
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; }
         .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; cursor: pointer; }
@@ -48,9 +53,18 @@
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; } .active-tab { display: block; }
         input[type="date"], input[type="number"] { -webkit-appearance: none; }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
     </style>
 </head>
 <body>
+
+<div id="celebration-overlay">
+    <div id="celebration-text">TARGET<br>ACHIEVED!</div>
+</div>
 
 <div id="page-input" class="tab-content active-tab">
     <div class="target-hero" id="hero-box">
@@ -80,7 +94,6 @@
         <select id="hist-month" onchange="refresh()" style="flex:1; padding:12px; border-radius:12px; border:none; font-weight:bold; background:white;"></select>
     </div>
     <div class="card" style="padding: 15px;"><div class="cal-grid" id="cal-container"></div></div>
-    
     <div class="black-card">
         <div id="hist-label" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">集計</div>
         <div style="font-size:0.9rem; opacity:0.8;">期間総売上 (税抜)</div>
@@ -88,18 +101,13 @@
         <div style="font-size: 0.8rem; color: #34c759; font-weight: bold; margin-bottom: 15px;">
             ( 1日平均: <span id="hist-avg-sales">0</span>円 / 目標: <span id="hist-target-avg">0</span>円 )
         </div>
-        
         <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
             <div class="badge" id="hist-rate">暫定歩合: --%</div>
             <div style="font-size:0.85rem; opacity:0.8;">推定歩合給</div>
             <div class="total-val" id="hist-total-income">0円</div>
         </div>
     </div>
-
-    <div class="card">
-        <h2 style="color:#1c1c1e">日別履歴</h2>
-        <div id="history-groups"></div>
-    </div>
+    <div class="card"><h2 style="color:#1c1c1e">日別履歴</h2><div id="history-groups"></div></div>
 </div>
 
 <div id="page-settings" class="tab-content">
@@ -114,10 +122,8 @@
             <input type="number" id="set-days" oninput="saveSettings()" style="width:120px; text-align:right; border:none; font-size:1.1rem; font-weight:bold; color:var(--ios-blue);">
         </div>
     </div>
-
     <div class="card">
         <h2>💾 バックアップとお守り</h2>
-        <p style="font-size:0.8rem; color:#8e8e93; line-height:1.4;">機種変更の時や、万が一のためにデータを保存できます。</p>
         <button class="btn-action btn-copy" onclick="copyBackup()">バックアップ用データをコピー</button>
         <button class="btn-action btn-restore" onclick="restoreBackup()">データを復元する</button>
     </div>
@@ -131,42 +137,43 @@
 
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
-    
+    let hasCelebratedToday = false;
+
+    // ★ここで演出時間を調整できるわよ！★
+    const CELEB_DURATION = 5000; // 演出が続く時間（ミリ秒：5000 = 5秒）
+
+    function startCelebration() {
+        const overlay = document.getElementById('celebration-overlay');
+        const text = document.getElementById('celebration-text');
+        overlay.style.opacity = '1';
+        text.style.transform = 'scale(1)';
+
+        for (let i = 0; i < 100; i++) {
+            createConfetti();
+        }
+
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            text.style.transform = 'scale(0.5)';
+        }, CELEB_DURATION);
+    }
+
+    function createConfetti() {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        c.style.animation = `confetti-fall ${2 + Math.random() * 3}s linear forwards`;
+        c.style.width = Math.random() * 10 + 5 + 'px';
+        c.style.height = c.style.width;
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 5000);
+    }
+
     function getRate(net) { 
         if (net >= 550000) return 60.8;
         if (net >= 470000) return 57.9;
         return 55.0; 
-    }
-
-    function toggleDay(dateStr) {
-        const el = document.getElementById(`group-${dateStr}`);
-        if (el) el.classList.toggle('open');
-    }
-
-    function scrollToDate(dateStr) {
-        const el = document.getElementById(`group-${dateStr}`);
-        if (el) {
-            document.querySelectorAll('.day-group').forEach(g => g.classList.remove('open'));
-            el.classList.add('open');
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    function renderCalendar(year, month, history) {
-        const container = document.getElementById('cal-container');
-        container.innerHTML = '';
-        const days = ['日','月','火','水','木','金','土'];
-        days.forEach(d => container.innerHTML += `<div class="cal-day-label">${d}</div>`);
-        const firstDay = new Date(year, month - 1, 1).getDay();
-        const lastDate = new Date(year, month, 0).getDate();
-        const todayStr = new Date().toISOString().split('T')[0];
-        for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>';
-        for (let d = 1; d <= lastDate; d++) {
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const hasData = history.some(h => h.date === dateStr);
-            const isToday = dateStr === todayStr ? 'is-today' : '';
-            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="scrollToDate('${dateStr}')">${d}</div>`;
-        }
     }
 
     function refresh(isSave = false) {
@@ -186,105 +193,57 @@
         const salesBeforeToday = monthlyData.filter(h => h.date !== todayStr).reduce((sum, h) => sum + h.net, 0);
         const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / (remainDaysForNorm || 1));
         const todayRecords = monthlyData.filter(h => h.date === selectedDate);
-        const todayGrossSum = todayRecords.reduce((sum, h) => sum + h.gross, 0);
         const todayNetSum = todayRecords.reduce((sum, h) => sum + h.net, 0);
+        const todayGrossSum = todayRecords.reduce((sum, h) => sum + h.gross, 0);
         const finalTodayNorm = Math.max(0, dailyBaseNorm - todayNetSum);
+
+        // お祝いチェック：ノルマ達成＆今日まだ祝ってない＆入力直後
+        if (isSave && finalTodayNorm <= 0 && !hasCelebratedToday && selectedDate === todayStr) {
+            startCelebration();
+            hasCelebratedToday = true;
+        }
 
         document.getElementById('disp-norm').innerText = Math.floor(finalTodayNorm).toLocaleString();
         document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
-        document.getElementById('disp-today-sum').innerHTML = 
-            `<div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span style="font-size: 0.75rem; color: #aaa;">今日の合計(税抜)</span>
-                <span style="color: #FFD700; font-size: 1.5rem; font-weight: 900; flex-grow: 1; text-align: center;">${Math.floor(todayNetSum).toLocaleString()}<small style="font-size:0.8rem; margin-left:2px;">円</small></span>
-                <span style="font-size: 0.75rem; color: #8e8e93;">(税込${Math.floor(todayGrossSum).toLocaleString()}円)</span>
-             </div>`;
+        document.getElementById('disp-today-sum').innerHTML = `税込:${Math.floor(todayGrossSum).toLocaleString()}円 / 税抜:${Math.floor(todayNetSum).toLocaleString()}円`;
 
+        // 履歴とカレンダー表示（中身は前回と同じ）
         const fYear = parseInt(document.getElementById('hist-year').value);
         const fMonth = parseInt(document.getElementById('hist-month').value);
         renderCalendar(fYear, fMonth, history);
-
         const fHist = history.filter(h => h.date.startsWith(`${fYear}-${String(fMonth).padStart(2,'0')}`));
         const fTotalNet = fHist.reduce((sum, h) => sum + h.net, 0);
         const fRate = getRate(fTotalNet);
         const fDays = [...new Set(fHist.map(h => h.date))].length; 
         const fAvg = fDays > 0 ? Math.floor(fTotalNet / fDays) : 0;
         const fTargetAvg = Math.floor(sets.goal / sets.days);
-
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
         document.getElementById('hist-avg-sales').innerText = fAvg.toLocaleString();
         document.getElementById('hist-target-avg').innerText = fTargetAvg.toLocaleString();
         document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
-
+        
         const groups = {};
         fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
-        
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
             const daySum = groups[date].reduce((s, h) => s + h.net, 0);
-            return `
-                <div class="day-group" id="group-${date}">
-                    <div class="day-header" onclick="toggleDay('${date}')">
-                        <div class="day-info">${date.substring(5).replace('-','/')} <span class="arrow">▶</span></div>
-                        <div class="day-sum">${Math.floor(daySum).toLocaleString()}円</div>
-                    </div>
-                    <div class="day-details">
-                        ${groups[date].map((h, index) => `
-                            <div class="detail-row">
-                                <div style="font-size: 0.95rem; display: flex; align-items: center; gap: 12px;">
-                                    <div style="background: #e5e5ea; color: #3a3a3c; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; min-width: 45px; text-align: center;">
-                                        ${index + 1}件目
-                                    </div>
-                                    <div>
-                                        <strong style="color: var(--ios-blue); font-size:1.1rem;">税抜:${h.net.toLocaleString()}円</strong>
-                                        <div style="color:#8e8e93; font-size:0.75rem;">(税込:${h.gross.toLocaleString()}円)</div>
-                                    </div>
-                                </div>
-                                <div style="display:flex; gap:8px;">
-                                    <button class="btn-pencil" onclick="editData(${h.id})">✏️</button>
-                                    <button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+            return `<div class="day-group" id="group-${date}"><div class="day-header" onclick="toggleDay('${date}')"><div class="day-info">${date.substring(5).replace('-','/')} <span class="arrow">▶</span></div><div class="day-sum">${Math.floor(daySum).toLocaleString()}円</div></div><div class="day-details">${groups[date].map((h, index) => `<div class="detail-row"><div style="font-size: 0.95rem;">${index + 1}件目: <strong>税抜${h.net.toLocaleString()}円</strong></div><div style="display:flex; gap:8px;"><button class="btn-pencil" onclick="editData(${h.id})">✏️</button><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div></div>`).join('')}</div></div>`;
         }).join('') || '<div style="text-align:center;padding:20px;color:#8e8e93;">データなし</div>';
     }
 
-    function saveData() {
-        const date = document.getElementById('work-date').value;
-        const gross = parseFloat(document.getElementById('input-gross').value);
-        if (!gross) return;
-        const h = DB.load('taxi_v11_hist', []);
-        h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) });
-        DB.save('taxi_v11_hist', h);
-        document.getElementById('input-gross').value = '';
-        refresh(true);
-    }
+    // 他の関数（saveData, deleteData, editData, showPage, backup等）は前回と同じ
+    function saveData() { const date = document.getElementById('work-date').value; const gross = parseFloat(document.getElementById('input-gross').value); if (!gross) return; const h = DB.load('taxi_v11_hist', []); h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) }); DB.save('taxi_v11_hist', h); document.getElementById('input-gross').value = ''; refresh(true); }
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
     function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正(円)', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
+    function copyBackup() { const history = localStorage.getItem('taxi_v11_hist') || '[]'; const sets = localStorage.getItem('taxi_v11_sets') || '{}'; const backupStr = btoa(unescape(encodeURIComponent(JSON.stringify({ history, sets })))); navigator.clipboard.writeText(backupStr).then(() => alert('コピーしました！')); }
+    function restoreBackup() { const str = prompt('貼り付けてください：'); if (!str) return; try { const data = JSON.parse(decodeURIComponent(escape(atob(str)))); if (confirm('復元しますか？')) { localStorage.setItem('taxi_v11_hist', data.history); localStorage.setItem('taxi_v11_sets', data.sets); location.reload(); } } catch(e) { alert('失敗！'); } }
 
-    function copyBackup() {
-        const history = localStorage.getItem('taxi_v11_hist') || '[]';
-        const sets = localStorage.getItem('taxi_v11_sets') || '{}';
-        const backupStr = btoa(unescape(encodeURIComponent(JSON.stringify({ history, sets }))));
-        navigator.clipboard.writeText(backupStr).then(() => alert('バックアップ用文字をコピーしました！LINEなどに貼り付けて保存してね。'));
-    }
-    function restoreBackup() {
-        const str = prompt('保存していたバックアップ文字を貼り付けてください：');
-        if (!str) return;
-        try {
-            const data = JSON.parse(decodeURIComponent(escape(atob(str))));
-            if (confirm('データを復元しますか？（今のデータは上書きされます）')) {
-                localStorage.setItem('taxi_v11_hist', data.history);
-                localStorage.setItem('taxi_v11_sets', data.sets);
-                location.reload();
-            }
-        } catch(e) { alert('文字が正しくないみたい…もう一度確認してみて！'); }
-    }
+    function toggleDay(dateStr) { const el = document.getElementById(`group-${dateStr}`); if (el) el.classList.toggle('open'); }
+    function scrollToDate(dateStr) { const el = document.getElementById(`group-${dateStr}`); if (el) { document.querySelectorAll('.day-group').forEach(g => g.classList.remove('open')); el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+    function renderCalendar(year, month, history) { const container = document.getElementById('cal-container'); container.innerHTML = ''; const days = ['日','月','火','水','木','金','土']; days.forEach(d => container.innerHTML += `<div class="cal-day-label">${d}</div>`); const firstDay = new Date(year, month - 1, 1).getDay(); const lastDate = new Date(year, month, 0).getDate(); const todayStr = new Date().toISOString().split('T')[0]; for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>'; for (let d = 1; d <= lastDate; d++) { const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const hasData = history.some(h => h.date === dateStr); const isToday = dateStr === todayStr ? 'is-today' : ''; container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="scrollToDate('${dateStr}')">${d}</div>`; } }
 
     document.getElementById('work-date').valueAsDate = new Date();
     const yr = document.getElementById('hist-year'); const mt = document.getElementById('hist-month');
