@@ -10,33 +10,32 @@
     <style>
         :root { --ios-blue: #007AFF; --ios-red: #ff3b30; --ios-green: #34c759; --bg: #f2f2f7; --card: #ffffff; --dark-card: #1c1c1e; --pencil-bg: #eef6ff; --trash-bg: #fff1f0; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: calc(env(safe-area-inset-top) + 10px); padding-bottom: 100px; color: #1c1c1e; overflow-x: hidden; }
+        
+        /* メインヒーローエリア */
         .target-hero { background: linear-gradient(135deg, #5e5ce6, #af52de); color: white; border-radius: 20px; padding: 25px 20px; text-align: center; margin-bottom: 20px; position: relative; }
         .target-hero .val { font-size: 2.8rem; font-weight: 800; margin: 10px 0; }
+        
+        /* お祝い演出（紙吹雪と文字） */
+        #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
+        #celebration-text { color: #FFD700; font-size: 3rem; font-weight: 900; text-shadow: 0 4px 15px rgba(0,0,0,0.6); transform: scale(0.5); transition: transform 0.5s; text-align: center; line-height: 1.1; }
+        .confetti { position: fixed; width: 12px; height: 12px; z-index: 10001; pointer-events: none; }
+
+        /* 黒カードと履歴 */
         .black-card { background: var(--dark-card); color: white; border-radius: 20px; padding: 25px 20px; margin-bottom: 20px; text-align: center; }
         .badge { background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 10px; }
         .total-val { font-size: 2.6rem; font-weight: 900; color: #FFD700; margin: 5px 0; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { font-size: 1rem; color: var(--ios-blue); margin: 0 0 15px 0; }
         
-        /* お祝い演出用 */
-        #celebration-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
-        #celebration-text { color: #FFD700; font-size: 3rem; font-weight: 900; text-shadow: 0 0 20px rgba(0,0,0,0.5); transform: scale(0.5); transition: transform 0.5s; text-align: center; }
-        .confetti { position: absolute; width: 10px; height: 10px; background: #f00; opacity: 0; }
-
+        /* 共通UI */
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; }
-        .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; cursor: pointer; }
+        .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; }
         .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; }
-        .is-today { border: 2px solid var(--ios-blue); box-sizing: border-box; }
+        .is-today { border: 2px solid var(--ios-blue); }
 
         .day-group { border-bottom: 1px solid #f2f2f7; overflow: hidden; }
         .day-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; cursor: pointer; }
-        .day-header:active { background: #f9f9fb; }
-        .day-info { font-weight: bold; }
-        .day-sum { font-weight: 800; color: #1c1c1e; font-size: 1.1rem; }
         .day-details { display: none; background: #f9f9fb; padding: 10px; border-radius: 12px; margin-bottom: 10px; }
-        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #eee; }
-        .detail-row:last-child { border-bottom: none; }
         .open .day-details { display: block; }
         .open .arrow { transform: rotate(90deg); }
         .arrow { transition: 0.2s; color: #ccc; font-size: 0.8rem; margin-left: 5px; display: inline-block; }
@@ -44,15 +43,10 @@
         .btn-pencil, .btn-trash { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-pencil { background: var(--pencil-bg); } .btn-trash { background: var(--trash-bg); }
 
-        .btn-action { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        .btn-copy { background: #eef6ff; color: var(--ios-blue); }
-        .btn-restore { background: #f2f2f7; color: #3a3a3c; }
-
         nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 0.5px solid #c6c6c8; display: flex; padding-bottom: env(safe-area-inset-bottom); height: 80px; z-index: 100; }
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; } .active-tab { display: block; }
-        input[type="date"], input[type="number"] { -webkit-appearance: none; }
 
         @keyframes confetti-fall {
             0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
@@ -72,16 +66,19 @@
         <div class="val"><span id="disp-norm">0</span> 円</div>
         <div id="disp-progress" style="font-size: 0.8rem; opacity: 0.8;">---</div>
     </div>
+
     <div class="card">
         <input type="date" id="work-date" onchange="refresh()" style="border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; margin-bottom:20px; background:#efeff4;">
+        
         <div style="text-align: center;">
             <div style="background: #1c1c1e; color: white; padding: 12px 10px; border-radius: 16px; display: inline-block; margin-bottom: 25px; min-width: 95%;">
                 <div id="disp-today-sum"></div>
             </div>
+
             <div style="text-align: left; margin-left: 5%; margin-bottom: 8px;"><label style="font-size: 0.9rem; font-weight: bold; color: #8e8e93;">売上入力 (税込)</label></div>
             <div style="position: relative; width: 90%; margin: 0 auto;">
                 <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 2rem; font-weight: 800; color: var(--ios-blue);">¥</span>
-                <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box;">
+                <input type="number" id="input-gross" pattern="\d*" placeholder="0" oninput="updateNormPreview()" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box;">
             </div>
             <button onclick="saveData()" style="width:100%; background:var(--ios-blue); color:white; border:none; border-radius:16px; padding:20px; font-size:1.4rem; font-weight:bold; margin-top:30px;">売上を追加</button>
         </div>
@@ -107,7 +104,7 @@
             <div class="total-val" id="hist-total-income">0円</div>
         </div>
     </div>
-    <div class="card"><h2 style="color:#1c1c1e">日別履歴</h2><div id="history-groups"></div></div>
+    <div id="history-groups"></div>
 </div>
 
 <div id="page-settings" class="tab-content">
@@ -123,9 +120,8 @@
         </div>
     </div>
     <div class="card">
-        <h2>💾 バックアップとお守り</h2>
-        <button class="btn-action btn-copy" onclick="copyBackup()">バックアップ用データをコピー</button>
-        <button class="btn-action btn-restore" onclick="restoreBackup()">データを復元する</button>
+        <button class="btn-action btn-copy" style="width:100%; padding:15px; background:#eef6ff; color:var(--ios-blue); border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;" onclick="copyBackup()">データをコピー</button>
+        <button class="btn-action btn-restore" style="width:100%; padding:15px; background:#f2f2f7; color:#3a3a3c; border:none; border-radius:12px; font-weight:bold;" onclick="restoreBackup()">データを復元</button>
     </div>
 </div>
 
@@ -138,9 +134,7 @@
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
     let hasCelebratedToday = false;
-
-    // ★ここで演出時間を調整できるわよ！★
-    const CELEB_DURATION = 5000; // 演出が続く時間（ミリ秒：5000 = 5秒）
+    const CELEB_DURATION = 5000; 
 
     function startCelebration() {
         const overlay = document.getElementById('celebration-overlay');
@@ -149,7 +143,7 @@
         text.style.transform = 'scale(1)';
 
         for (let i = 0; i < 100; i++) {
-            createConfetti();
+            setTimeout(createConfetti, i * 20);
         }
 
         setTimeout(() => {
@@ -162,10 +156,12 @@
         const c = document.createElement('div');
         c.className = 'confetti';
         c.style.left = Math.random() * 100 + 'vw';
+        c.style.top = '-20px';
         c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
         c.style.animation = `confetti-fall ${2 + Math.random() * 3}s linear forwards`;
-        c.style.width = Math.random() * 10 + 5 + 'px';
+        c.style.width = Math.random() * 10 + 7 + 'px';
         c.style.height = c.style.width;
+        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
         document.body.appendChild(c);
         setTimeout(() => c.remove(), 5000);
     }
@@ -174,6 +170,15 @@
         if (net >= 550000) return 60.8;
         if (net >= 470000) return 57.9;
         return 55.0; 
+    }
+
+    // 数字が減っていくリアルタイム演出用
+    function updateNormPreview() {
+        const inputVal = parseFloat(document.getElementById('input-gross').value) || 0;
+        const netInput = Math.floor(inputVal / 1.1);
+        const currentNorm = parseFloat(document.getElementById('disp-norm').getAttribute('data-base-norm')) || 0;
+        const preview = Math.max(0, currentNorm - netInput);
+        document.getElementById('disp-norm').innerText = Math.floor(preview).toLocaleString();
     }
 
     function refresh(isSave = false) {
@@ -191,23 +196,36 @@
         let remainDaysForNorm = Math.max(1, sets.days - (isTodayEntered && now.getHours() < 7 ? workedCount - 1 : workedCount));
 
         const salesBeforeToday = monthlyData.filter(h => h.date !== todayStr).reduce((sum, h) => sum + h.net, 0);
-        const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / (remainDaysForNorm || 1));
+        const dailyBaseNorm = Math.ceil(Math.max(0, sets.goal - salesBeforeToday) / remainDaysForNorm);
+        
         const todayRecords = monthlyData.filter(h => h.date === selectedDate);
         const todayNetSum = todayRecords.reduce((sum, h) => sum + h.net, 0);
         const todayGrossSum = todayRecords.reduce((sum, h) => sum + h.gross, 0);
+        
         const finalTodayNorm = Math.max(0, dailyBaseNorm - todayNetSum);
 
-        // お祝いチェック：ノルマ達成＆今日まだ祝ってない＆入力直後
+        // お祝い発動
         if (isSave && finalTodayNorm <= 0 && !hasCelebratedToday && selectedDate === todayStr) {
             startCelebration();
             hasCelebratedToday = true;
         }
 
-        document.getElementById('disp-norm').innerText = Math.floor(finalTodayNorm).toLocaleString();
+        // ノルマ表示
+        const normEl = document.getElementById('disp-norm');
+        normEl.innerText = Math.floor(finalTodayNorm).toLocaleString();
+        normEl.setAttribute('data-base-norm', finalTodayNorm); // プレビュー用に保存
+        
         document.getElementById('disp-progress').innerText = `今月: ${workedCount} / ${sets.days} 回出勤`;
-        document.getElementById('disp-today-sum').innerHTML = `税込:${Math.floor(todayGrossSum).toLocaleString()}円 / 税抜:${Math.floor(todayNetSum).toLocaleString()}円`;
 
-        // 履歴とカレンダー表示（中身は前回と同じ）
+        // 今日の合計表示（復活！）
+        document.getElementById('disp-today-sum').innerHTML = 
+            `<div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span style="font-size: 0.75rem; color: #aaa;">今日の合計(税抜)</span>
+                <span style="color: #FFD700; font-size: 1.5rem; font-weight: 900; flex-grow: 1; text-align: center;">${Math.floor(todayNetSum).toLocaleString()}<small style="font-size:0.8rem; margin-left:2px;">円</small></span>
+                <span style="font-size: 0.75rem; color: #8e8e93;">(税込${Math.floor(todayGrossSum).toLocaleString()}円)</span>
+             </div>`;
+
+        // 履歴タブ
         const fYear = parseInt(document.getElementById('hist-year').value);
         const fMonth = parseInt(document.getElementById('hist-month').value);
         renderCalendar(fYear, fMonth, history);
@@ -217,6 +235,7 @@
         const fDays = [...new Set(fHist.map(h => h.date))].length; 
         const fAvg = fDays > 0 ? Math.floor(fTotalNet / fDays) : 0;
         const fTargetAvg = Math.floor(sets.goal / sets.days);
+        
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
@@ -228,29 +247,52 @@
         fHist.sort((a,b) => a.id - b.id).forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         document.getElementById('history-groups').innerHTML = Object.keys(groups).sort().reverse().map(date => {
             const daySum = groups[date].reduce((s, h) => s + h.net, 0);
-            return `<div class="day-group" id="group-${date}"><div class="day-header" onclick="toggleDay('${date}')"><div class="day-info">${date.substring(5).replace('-','/')} <span class="arrow">▶</span></div><div class="day-sum">${Math.floor(daySum).toLocaleString()}円</div></div><div class="day-details">${groups[date].map((h, index) => `<div class="detail-row"><div style="font-size: 0.95rem;">${index + 1}件目: <strong>税抜${h.net.toLocaleString()}円</strong></div><div style="display:flex; gap:8px;"><button class="btn-pencil" onclick="editData(${h.id})">✏️</button><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div></div>`).join('')}</div></div>`;
+            return `<div class="card day-group" id="group-${date}" style="padding:10px; margin-bottom:10px;"><div class="day-header" onclick="toggleDay('${date}')" style="display:flex; justify-content:space-between; font-weight:bold;"><span>${date.substring(5).replace('-','/')} <span class="arrow">▶</span></span><span>${Math.floor(daySum).toLocaleString()}円</span></div><div class="day-details" style="margin-top:10px;">${groups[date].map((h, index) => `<div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid #eee;"><span>${index+1}件目: 税抜${h.net.toLocaleString()}円</span><button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button></div>`).join('')}</div></div>`;
         }).join('') || '<div style="text-align:center;padding:20px;color:#8e8e93;">データなし</div>';
     }
 
-    // 他の関数（saveData, deleteData, editData, showPage, backup等）は前回と同じ
-    function saveData() { const date = document.getElementById('work-date').value; const gross = parseFloat(document.getElementById('input-gross').value); if (!gross) return; const h = DB.load('taxi_v11_hist', []); h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) }); DB.save('taxi_v11_hist', h); document.getElementById('input-gross').value = ''; refresh(true); }
+    function saveData() { 
+        const date = document.getElementById('work-date').value; 
+        const gross = parseFloat(document.getElementById('input-gross').value); 
+        if (!gross) return; 
+        const h = DB.load('taxi_v11_hist', []); 
+        h.push({ id: Date.now(), date, gross, net: Math.floor(gross/1.1) }); 
+        DB.save('taxi_v11_hist', h); 
+        document.getElementById('input-gross').value = ''; 
+        refresh(true); 
+    }
+    
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
-    function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正(円)', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
-    function copyBackup() { const history = localStorage.getItem('taxi_v11_hist') || '[]'; const sets = localStorage.getItem('taxi_v11_sets') || '{}'; const backupStr = btoa(unescape(encodeURIComponent(JSON.stringify({ history, sets })))); navigator.clipboard.writeText(backupStr).then(() => alert('コピーしました！')); }
-    function restoreBackup() { const str = prompt('貼り付けてください：'); if (!str) return; try { const data = JSON.parse(decodeURIComponent(escape(atob(str)))); if (confirm('復元しますか？')) { localStorage.setItem('taxi_v11_hist', data.history); localStorage.setItem('taxi_v11_sets', data.sets); location.reload(); } } catch(e) { alert('失敗！'); } }
-
     function toggleDay(dateStr) { const el = document.getElementById(`group-${dateStr}`); if (el) el.classList.toggle('open'); }
-    function scrollToDate(dateStr) { const el = document.getElementById(`group-${dateStr}`); if (el) { document.querySelectorAll('.day-group').forEach(g => g.classList.remove('open')); el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
-    function renderCalendar(year, month, history) { const container = document.getElementById('cal-container'); container.innerHTML = ''; const days = ['日','月','火','水','木','金','土']; days.forEach(d => container.innerHTML += `<div class="cal-day-label">${d}</div>`); const firstDay = new Date(year, month - 1, 1).getDay(); const lastDate = new Date(year, month, 0).getDate(); const todayStr = new Date().toISOString().split('T')[0]; for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>'; for (let d = 1; d <= lastDate; d++) { const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const hasData = history.some(h => h.date === dateStr); const isToday = dateStr === todayStr ? 'is-today' : ''; container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}" onclick="scrollToDate('${dateStr}')">${d}</div>`; } }
+    
+    function renderCalendar(year, month, history) { 
+        const container = document.getElementById('cal-container'); 
+        container.innerHTML = ''; 
+        const days = ['日','月','火','水','木','金','土']; 
+        days.forEach(d => container.innerHTML += `<div class="cal-day-label">${d}</div>`); 
+        const firstDay = new Date(year, month - 1, 1).getDay(); 
+        const lastDate = new Date(year, month, 0).getDate(); 
+        const todayStr = new Date().toISOString().split('T')[0]; 
+        for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>'; 
+        for (let d = 1; d <= lastDate; d++) { 
+            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`; 
+            const hasData = history.some(h => h.date === dateStr); 
+            const isToday = dateStr === todayStr ? 'is-today' : ''; 
+            container.innerHTML += `<div class="cal-cell ${hasData ? 'has-data' : ''} ${isToday}">${d}</div>`; 
+        } 
+    }
+
+    function copyBackup() { const h = localStorage.getItem('taxi_v11_hist') || '[]'; const s = localStorage.getItem('taxi_v11_sets') || '{}'; const b = btoa(unescape(encodeURIComponent(JSON.stringify({ h, s })))); navigator.clipboard.writeText(b).then(() => alert('コピー完了！')); }
+    function restoreBackup() { const s = prompt('コードを貼り付け：'); if(!s) return; try { const d = JSON.parse(decodeURIComponent(escape(atob(s)))); localStorage.setItem('taxi_v11_hist', d.h); localStorage.setItem('taxi_v11_sets', d.s); location.reload(); } catch(e) { alert('失敗'); } }
 
     document.getElementById('work-date').valueAsDate = new Date();
     const yr = document.getElementById('hist-year'); const mt = document.getElementById('hist-month');
     for(let y=2026; y>=2024; y--) { let o = document.createElement('option'); o.value=y; o.text=y+'年'; yr.add(o); }
     for(let m=1; m<=12; m++) { let o = document.createElement('option'); o.value=m; o.text=m+'月'; if(m === new Date().getMonth()+1) o.selected = true; mt.add(o); }
-    const s = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
-    document.getElementById('set-goal').value = s.goal; document.getElementById('set-days').value = s.days;
+    const sets = DB.load('taxi_v11_sets', { goal: 550000, days: 12 });
+    document.getElementById('set-goal').value = sets.goal; document.getElementById('set-days').value = sets.days;
     refresh();
 </script>
 </body>
