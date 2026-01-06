@@ -17,25 +17,23 @@
         .total-val { font-size: 2.4rem; font-weight: 800; }
         .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
-        /* カレンダー */
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .cal-day-label { font-size: 0.7rem; color: #8e8e93; font-weight: bold; }
         .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; position: relative; border-radius: 10px; cursor: pointer; }
         .has-data::after { content: ''; width: 6px; height: 6px; background: var(--ios-blue); border-radius: 50%; position: absolute; bottom: 4px; }
         .is-today { border: 2px solid var(--ios-blue); box-sizing: border-box; }
 
-        /* 日別アコーディオン */
         .day-group { border-bottom: 1px solid #f2f2f7; overflow: hidden; }
         .day-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; cursor: pointer; }
         .day-header:active { background: #f9f9fb; }
         .day-info { font-weight: bold; }
         .day-sum { font-weight: 800; color: #1c1c1e; font-size: 1.1rem; }
         .day-details { display: none; background: #f9f9fb; padding: 10px; border-radius: 12px; margin-bottom: 10px; }
-        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid #eee; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #eee; }
         .detail-row:last-child { border-bottom: none; }
         .open .day-details { display: block; }
         .open .arrow { transform: rotate(90deg); }
-        .arrow { transition: 0.2s; color: #ccc; font-size: 0.8rem; }
+        .arrow { transition: 0.2s; color: #ccc; font-size: 0.8rem; margin-left: 5px; display: inline-block; }
 
         .btn-pencil, .btn-trash { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-pencil { background: var(--pencil-bg); } .btn-trash { background: var(--trash-bg); }
@@ -44,7 +42,6 @@
         nav button { flex: 1; border: none; background: none; color: #8e8e93; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         nav button.active { color: var(--ios-blue); }
         .tab-content { display: none; } .active-tab { display: block; }
-        input[type="date"], input[type="number"] { -webkit-appearance: none; }
     </style>
 </head>
 <body>
@@ -56,7 +53,7 @@
         <div id="disp-progress" style="font-size: 0.8rem; opacity: 0.8;">---</div>
     </div>
     <div class="card">
-        <input type="date" id="work-date" onchange="refresh()" style="border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; margin-bottom:20px; background:#efeff4;">
+        <input type="date" id="work-date" onchange="refresh()" style="border: 1px solid #ddd; border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ios-blue); font-weight: bold; width: 100%; margin-bottom:20px; background:#efeff4; -webkit-appearance:none;">
         <div style="text-align: center;">
             <div style="background: #1c1c1e; color: white; padding: 12px 10px; border-radius: 16px; display: inline-block; margin-bottom: 25px; min-width: 95%;">
                 <div id="disp-today-sum"></div>
@@ -64,7 +61,7 @@
             <div style="text-align: left; margin-left: 5%; margin-bottom: 8px;"><label style="font-size: 0.9rem; font-weight: bold; color: #8e8e93;">売上入力 (税込)</label></div>
             <div style="position: relative; width: 90%; margin: 0 auto;">
                 <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 2rem; font-weight: 800; color: var(--ios-blue);">¥</span>
-                <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box;">
+                <input type="number" id="input-gross" pattern="\d*" placeholder="0" style="width: 100%; border: 2px solid #e5e5ea; border-radius: 16px; padding: 15px 15px 15px 50px; font-size: 2.8rem; text-align: right; font-weight: 800; outline: none; background: #f9f9fb; box-sizing: border-box; -webkit-appearance:none;">
             </div>
             <button onclick="saveData()" style="width:100%; background:var(--ios-blue); color:white; border:none; border-radius:16px; padding:20px; font-size:1.4rem; font-weight:bold; margin-top:30px;">売上を追加</button>
         </div>
@@ -111,7 +108,6 @@
 
 <script>
     const DB = { save: (k, d) => localStorage.setItem(k, JSON.stringify(d)), load: (k, def) => JSON.parse(localStorage.getItem(k)) || def };
-    let currentNorm = 0;
     
     function getRate(net) { 
         if (net >= 550000) return 60.8;
@@ -176,7 +172,7 @@
         document.getElementById('disp-today-sum').innerHTML = 
             `<div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <span style="font-size: 0.75rem; color: #aaa;">今日の合計(税抜)</span>
-                <span style="color: #FFD700; font-size: 1.5rem; font-weight: 900; flex-grow: 1; text-align: center;">${Math.floor(todayNetSum).toLocaleString()}<small style="font-size:0.8rem;">円</small></span>
+                <span style="color: #FFD700; font-size: 1.5rem; font-weight: 900; flex-grow: 1; text-align: center;">${Math.floor(todayNetSum).toLocaleString()}<small style="font-size:0.8rem; margin-left:2px;">円</small></span>
                 <span style="font-size: 0.75rem; color: #8e8e93;">(税込${Math.floor(todayGrossSum).toLocaleString()}円)</span>
              </div>`;
 
@@ -189,10 +185,9 @@
         const fRate = getRate(fTotalNet);
         document.getElementById('hist-label').innerText = `${fYear}年${fMonth}月の合計`;
         document.getElementById('hist-rate').innerText = `暫定歩合: ${fRate}%`;
-        document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
         document.getElementById('hist-total-sales').innerText = Math.floor(fTotalNet).toLocaleString();
+        document.getElementById('hist-total-income').innerText = Math.floor(fTotalNet * (fRate/100)).toLocaleString() + "円";
 
-        // 日別グループ化
         const groups = {};
         fHist.forEach(h => { if(!groups[h.date]) groups[h.date] = []; groups[h.date].push(h); });
         
@@ -207,7 +202,10 @@
                     <div class="day-details">
                         ${groups[date].map(h => `
                             <div class="detail-row">
-                                <span>税込:${h.gross.toLocaleString()} <small>(税抜:${h.net.toLocaleString()})</small></span>
+                                <div style="font-size: 0.95rem;">
+                                    <strong>税込:${h.gross.toLocaleString()}円</strong><br>
+                                    <span style="color:#8e8e93; font-size:0.8rem;">(税抜:${h.net.toLocaleString()}円)</span>
+                                </div>
                                 <div style="display:flex; gap:8px;">
                                     <button class="btn-pencil" onclick="editData(${h.id})">✏️</button>
                                     <button class="btn-trash" onclick="deleteData(${h.id})">🗑️</button>
@@ -231,7 +229,7 @@
         refresh(true);
     }
     function deleteData(id) { if(confirm('消去しますか？')) { const h = DB.load('taxi_v11_hist', []); DB.save('taxi_v11_hist', h.filter(x => x.id !== id)); refresh(); } }
-    function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
+    function editData(id) { const h = DB.load('taxi_v11_hist', []); const i = h.find(x => x.id === id); const n = prompt('税込修正(円)', i.gross); if(n) { i.gross = parseFloat(n); i.net = Math.floor(i.gross/1.1); DB.save('taxi_v11_hist', h); refresh(); } }
     function saveSettings() { DB.save('taxi_v11_sets', { goal: parseFloat(document.getElementById('set-goal').value)||550000, days: parseFloat(document.getElementById('set-days').value)||12 }); refresh(); }
     function showPage(p) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('nav button').forEach(el => el.classList.remove('active')); document.getElementById('page-' + p).classList.add('active-tab'); document.getElementById('nav-' + p).classList.add('active'); window.scrollTo(0,0); refresh(); }
 
